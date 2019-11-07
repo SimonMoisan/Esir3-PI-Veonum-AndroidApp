@@ -143,11 +143,9 @@ class MainActivity : AppCompatActivity()
         //called when image was captured from camera intent
         if (resultCode == Activity.RESULT_OK)
         {
-            //set image captured to image view
-            image_view.setImageURI(image_uri)
-
             //Change activity
             val intent = Intent(this, Analyse_Activity::class.java).apply {}
+            intent.putExtra("imageUri", image_uri.toString())
             startActivity(intent)
         }
     }
