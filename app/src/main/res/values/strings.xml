@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">IndustrialProject</string>
+    <string name="get_from_gallery_en">Get from gallery</string>
+    <string name="capture_image_en">Capture Image</string>
 </resources>
