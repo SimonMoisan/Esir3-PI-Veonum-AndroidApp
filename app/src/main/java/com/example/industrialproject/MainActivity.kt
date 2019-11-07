@@ -49,37 +49,37 @@ class MainActivity : AppCompatActivity()
                 //system os is < marshmallow
                 openCamera()
             }
+        }
 
-
-            //Button get image from gallery
-            imageGallery_btn.setOnClickListener {
-                //if system os is Marshmallow or Above, we need to request runtime permission
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+        //Button get image from gallery
+        imageGallery_btn.setOnClickListener {
+            //if system os is Marshmallow or Above, we need to request runtime permission
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            {
+                if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED ||
+                    checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED)
                 {
-                    if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED ||
-                        checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED)
-                    {
-                        //permission was not enabled
-                        val permission = arrayOf(
-                            Manifest.permission.CAMERA,
-                            Manifest.permission.READ_EXTERNAL_STORAGE
-                        )
-                        //show popup to request permission
-                        requestPermissions(permission, PERMISSION_CODE)
-                    }
-                    else
-                    {
-                        //permission already granted
-                        pickImageFromGallery()
-                    }
+                    //permission was not enabled
+                    val permission = arrayOf(
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    )
+                    //show popup to request permission
+                    requestPermissions(permission, PERMISSION_CODE)
                 }
                 else
                 {
-                    //system os is < marshmallow
+                    //permission already granted
                     pickImageFromGallery()
                 }
             }
+            else
+            {
+                //system os is < marshmallow
+                pickImageFromGallery()
+            }
         }
+
     }
 
     private fun openCamera()
@@ -92,6 +92,8 @@ class MainActivity : AppCompatActivity()
         val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, image_uri)
         startActivityForResult(cameraIntent, IMAGE_CAPTURE_CODE)
+
+
     }
 
     private fun pickImageFromGallery()
@@ -100,6 +102,12 @@ class MainActivity : AppCompatActivity()
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
         startActivityForResult(intent, IMAGE_PICK_CODE)
+    }
+
+    private fun changeActivity()
+    {
+        val intent = Intent(this, Analyse_Activity::class.java).apply{}
+        startActivity(intent)
     }
 
     companion object
@@ -137,6 +145,10 @@ class MainActivity : AppCompatActivity()
         {
             //set image captured to image view
             image_view.setImageURI(image_uri)
+
+            //Change activity
+            val intent = Intent(this, Analyse_Activity::class.java).apply {}
+            startActivity(intent)
         }
     }
 
