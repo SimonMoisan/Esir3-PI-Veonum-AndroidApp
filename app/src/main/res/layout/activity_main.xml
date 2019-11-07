@@ -22,4 +22,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
+
+    <!--Button to get a picture from gallery-->
+    <Button
+        android:id="@+id/imageGallery_btn"
+        android:text="Get image from gallery"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
 </LinearLayout>
