@@ -141,13 +141,19 @@ class MainActivity : AppCompatActivity()
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
     {
         //called when image was captured from camera intent
-        if (resultCode == Activity.RESULT_OK)
-        {
-            //Change activity
+        if (resultCode == Activity.RESULT_OK){
+            var true_imag_uri = ""
+            if (image_uri == null){
+                true_imag_uri = (data?.data.toString())
+            }else{
+                true_imag_uri = image_uri.toString()
+            }
             val intent = Intent(this, Analyse_Activity::class.java).apply {}
-            intent.putExtra("imageUri", image_uri.toString())
+            intent.putExtra("imageUri", true_imag_uri)
             startActivity(intent)
+
         }
+
     }
 
 }
