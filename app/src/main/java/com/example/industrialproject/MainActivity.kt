@@ -7,18 +7,29 @@ import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.icu.text.SimpleDateFormat
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.File
+import java.io.IOException
+import java.util.*
+
 
 class MainActivity : AppCompatActivity()
 {
     private val PERMISSION_CODE = 1000;
-    private val IMAGE_CAPTURE_CODE = 1001
+    private val IMAGE_CAPTURE_CODE = 1
     var image_uri: Uri? = null
+    var isGalleryChoosen= false
+    var isCameraChoosen = false
+    var currentPhotoPath: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -82,16 +93,54 @@ class MainActivity : AppCompatActivity()
 
     }
 
+
+
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+
+        // Create an image file name
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+        val storageDir: File = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(
+            "JPEG_${timeStamp}_", /* prefix */
+            ".jpg", /* suffix */
+            storageDir /* directory */
+        ).apply {
+            // Save a file: path for use with ACTION_VIEW intents
+            currentPhotoPath = absolutePath
+        }
+    }
+
+
     private fun openCamera()
     {
-        val values = ContentValues()
-        values.put(MediaStore.Images.Media.TITLE, "New Picture")
-        values.put(MediaStore.Images.Media.DESCRIPTION, "From the Camera")
-        image_uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-        //camera intent
-        val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, image_uri)
-        startActivityForResult(cameraIntent, IMAGE_CAPTURE_CODE)
+
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+            // Ensure that there's a camera activity to handle the intent
+            takePictureIntent.resolveActivity(packageManager)?.also {
+                // Create the File where the photo should go
+                val photoFile: File? = try {
+                    createImageFile()
+                } catch (ex: IOException) {
+                    // Error occurred while creating the File
+                    null
+                }
+                // Continue only if the File was successfully created
+                photoFile?.also {
+                    val photoURI: Uri = FileProvider.getUriForFile(
+                        this,
+                        "com.example.android.fileprovider",
+                        it
+                    )
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                    image_uri = photoURI
+                    isCameraChoosen = true
+                    startActivityForResult(takePictureIntent, IMAGE_CAPTURE_CODE)
+                }
+            }
+        }
+
+
 
 
     }
@@ -99,15 +148,11 @@ class MainActivity : AppCompatActivity()
     private fun pickImageFromGallery()
     {
         //Intent to pick image
-        val intent = Intent(Intent.ACTION_PICK)
-        intent.type = "image/*"
-        startActivityForResult(intent, IMAGE_PICK_CODE)
-    }
-
-    private fun changeActivity()
-    {
-        val intent = Intent(this, Analyse_Activity::class.java).apply{}
-        startActivity(intent)
+        val imageIntent = Intent(Intent.ACTION_PICK)
+        imageIntent.type = "image/*"
+        isGalleryChoosen = true
+        image_uri = null
+        startActivityForResult(imageIntent, IMAGE_PICK_CODE)
     }
 
     companion object
@@ -141,16 +186,19 @@ class MainActivity : AppCompatActivity()
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
     {
         //called when image was captured from camera intent
-        if (resultCode == Activity.RESULT_OK){
+        if (resultCode == Activity.RESULT_OK && data != null){
             var true_imag_uri = ""
-            if (image_uri == null){
-                true_imag_uri = (data?.data.toString())
+            if(image_uri == null){
+                true_imag_uri = (data.data.toString())
+
             }else{
                 true_imag_uri = image_uri.toString()
             }
+            Log.d("DEBUG", "messageG : " + true_imag_uri)
             val intent = Intent(this, Analyse_Activity::class.java).apply {}
             intent.putExtra("imageUri", true_imag_uri)
             startActivity(intent)
+        } else if (resultCode == Activity.RESULT_CANCELED) {
 
         }
 
