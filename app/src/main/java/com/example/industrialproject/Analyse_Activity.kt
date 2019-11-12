@@ -1,28 +1,21 @@
 package com.example.industrialproject
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.*
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import kotlinx.android.synthetic.main.activity_analyse.*
 import android.net.Uri
-import android.os.Build
 import android.util.Log
-import com.google.android.gms.vision.Frame
-import com.google.android.gms.vision.face.Face
-import com.google.android.gms.vision.face.FaceDetector
-import android.widget.Toast
+import android.media.FaceDetector.Face
+import android.media.FaceDetector
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+import android.graphics.PointF
+
 
 
 
@@ -47,36 +40,11 @@ class Analyse_Activity : AppCompatActivity() {
         }
 
         analyse_btn.setOnClickListener{
-            val image_uri:String = intent.getStringExtra("imageUri")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            {
-                if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED ||
-                    checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED)
-                {
-                    //permission was not enabled
-                    val permission = arrayOf(
-                        Manifest.permission.CAMERA,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                    )
-                    //show popup to request permission
-                    requestPermissions(permission, PERMISSION_CODE)
-                }
-                else
-                {
-                    //permission already granted
-                    analyseImage(image_uri)
-                }
-            }
-            else
-            {
-                //system os is < marshmallow
-                analyseImage(image_uri)
-            }
+            analyseImage()
         }
-
     }
 
-    fun getDipFromPixels(px: Float): Float {
+    private fun getDipFromPixels(px: Float): Float {
         return TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_PX,
             px,
@@ -84,12 +52,11 @@ class Analyse_Activity : AppCompatActivity() {
         )
     }
 
-    private fun analyseImage(imageUri:String)
+    private fun analyseImage()
     {
         //Image needs to be obtained with mutable option
         val options = BitmapFactory.Options()
         options.inMutable=true
-        //val bitmapToAnalyse = BitmapFactory.decodeFile(imageUri, options)
         val bitmapToAnalyse = analyse_image_view.drawable.toBitmap()
         
         //Paint object to display red squares for the faces
@@ -110,35 +77,30 @@ class Analyse_Activity : AppCompatActivity() {
         tempCanvas.drawBitmap(bitmapToAnalyse, 0.0f, 0.0f, null)
 
         //Face detector
-        val faceDetector = FaceDetector.Builder(applicationContext)
-            .setTrackingEnabled(false)
-            .setLandmarkType(FaceDetector.ALL_LANDMARKS)
-            .build()
-        if (!faceDetector.isOperational()) {
-            Toast.makeText(this, "Could not set up the face detector!", Toast.LENGTH_SHORT).show()
-            return
-        }
+        val maxFaces = 20
+        val myFaceDetector = FaceDetector(tempBitmap.width, tempBitmap.height, maxFaces)
+        val detectedFaces = arrayOfNulls<Face?>(maxFaces)
 
-        // Create a frame from the bitmap and detect faces
-        val frame = Frame.Builder().setBitmap(bitmapToAnalyse).build()
-        val faces = faceDetector.detect(frame)
-
+        val nbFaceDetected = myFaceDetector.findFaces(tempBitmap, detectedFaces)
         // Display rectangle for every detected face
         val scale = 1.0f
-        for (i in 0 until faces.size()) {
-            val thisFace:Face = faces.valueAt(i)
-            val x1 = thisFace.position.x
-            val y1 = thisFace.position.y
-            val x2 = x1 + thisFace.width
-            val y2 = y1 + thisFace.height
-            tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 2f, 2f, rectPaint)
+        for (i in 0 until nbFaceDetected) {
 
-            for (landmark in thisFace.landmarks) {
-                val cx = (landmark.position.x * scale)
-                val cy = (landmark.position.y * scale)
-                tempCanvas.drawCircle(cx, cy, getDipFromPixels(3.0f), circlePaint)
+            val thisFace:Face? = detectedFaces[i]
+            if(thisFace != null){
+
+                val midPoint = PointF()
+                thisFace.getMidPoint(midPoint)
+                val eyeDistance = thisFace.eyesDistance()
+
+                val left = (midPoint.x - (1.4 * eyeDistance) as Float)
+                val top = (midPoint.y - (1.8 * eyeDistance) as Float)
+                val right = (midPoint.x + (1.4 * eyeDistance) as Float)
+                val down = (midPoint.y + (1.8 * eyeDistance) as Float)
+
+                tempCanvas.drawRoundRect(RectF(left, top, right, down), 2f, 2f, rectPaint)
+
             }
-
         }
         analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
     }
