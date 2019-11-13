@@ -17,17 +17,26 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.IOException
 import java.util.*
+import android.media.MediaScannerConnection
+import android.graphics.Bitmap
+import android.os.Environment.DIRECTORY_PICTURES
+import android.os.Environment.getExternalStoragePublicDirectory
+import androidx.core.app.ComponentActivity
+import androidx.core.app.ComponentActivity.ExtraData
+import androidx.core.content.ContextCompat.getSystemService
+import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+import android.os.Environment
+import java.io.FileOutputStream
+
 
 class MainActivity : AppCompatActivity()
 {
-    private val PERMISSION_CODE = 1000;
+    private val PERMISSION_CODE = 1000
     private val IMAGE_CAPTURE_CODE = 1001
     var image_uri: Uri? = null
     var isGalleryChoosen= false
     var isCameraChoosen = false
 
-
-    @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
@@ -90,12 +99,30 @@ class MainActivity : AppCompatActivity()
 
     }
 
-    private fun galleryAddPic(currentpath : String) {
-        Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).also { mediaScanIntent ->
-            val f = File(currentpath)
-            mediaScanIntent.data = Uri.fromFile(f)
-            sendBroadcast(mediaScanIntent)
+    private fun saveImageToExternalStorage(finalBitmap: Bitmap) {
+        val root = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString()
+        val myDir = File(root + "/" + BuildConfig.APPLICATION_ID + "_pictures")
+        myDir.mkdirs()
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+        val fname = "Pic_$timeStamp.jpg"
+        val file = File(myDir, fname)
+        try {
+            val out = FileOutputStream(file)
+            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            out.flush()
+            out.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
+        // Tell the media scanner about the new file so that it is
+        // immediately available to the user.
+        MediaScannerConnection.scanFile(
+            this, arrayOf(file.toString()), null
+        ) { path, uri ->
+            Log.i("ExternalStorage", "Scanned $path:")
+            Log.i("ExternalStorage", "-> uri=$uri")
+        }
+
     }
 
     @Throws(IOException::class)
@@ -110,11 +137,9 @@ class MainActivity : AppCompatActivity()
             storageDir /* directory */
         ).apply {
             // Save a file: path for use with ACTION_VIEW intents
-            galleryAddPic(absolutePath)
         }
 
     }
-
 
 
     private fun openCamera()
@@ -202,6 +227,8 @@ class MainActivity : AppCompatActivity()
             }else if(isCameraChoosen){
                 true_imag_uri = image_uri.toString()
                 isCameraChoosen = false
+                val bitmap_temp = MediaStore.Images.Media.getBitmap(this.contentResolver, image_uri);
+                saveImageToExternalStorage(bitmap_temp)
                 Log.d("DEBUG", "Camera action finished and processed")
             }else {
                 Log.d("DEBUG", "Error, action finished but no action code activated")
