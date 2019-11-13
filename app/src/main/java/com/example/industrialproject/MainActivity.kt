@@ -15,6 +15,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity()
     var isCameraChoosen = false
     var currentPhotoPath: String = ""
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
@@ -95,6 +97,7 @@ class MainActivity : AppCompatActivity()
 
 
 
+    @RequiresApi(Build.VERSION_CODES.N)
     @Throws(IOException::class)
     private fun createImageFile(): File {
 
@@ -112,6 +115,7 @@ class MainActivity : AppCompatActivity()
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.N)
     private fun openCamera()
     {
 
@@ -163,6 +167,7 @@ class MainActivity : AppCompatActivity()
         private val PERMISSION_CODE = 1001;
     }
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray)
     {
         //called when user presses ALLOW or DENY from Permission Request Popup
@@ -171,8 +176,8 @@ class MainActivity : AppCompatActivity()
                 if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 {
                     //permission from popup was granted
-                    pickImageFromGallery()
-                    openCamera()
+                    //pickImageFromGallery()
+                    //openCamera()
                 }
                 else
                 {
@@ -194,7 +199,6 @@ class MainActivity : AppCompatActivity()
             }else{
                 true_imag_uri = image_uri.toString()
             }
-            Log.d("DEBUG", "messageG : " + true_imag_uri)
             val intent = Intent(this, Analyse_Activity::class.java).apply {}
             intent.putExtra("imageUri", true_imag_uri)
             startActivity(intent)
