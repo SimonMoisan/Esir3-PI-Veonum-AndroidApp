@@ -1,20 +1,16 @@
 package com.example.industrialproject
 
-import android.media.Image
 import androidx.appcompat.app.AppCompatActivity
 import android.Manifest
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.icu.text.SimpleDateFormat
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import kotlinx.android.synthetic.main.activity_main.*
@@ -22,15 +18,14 @@ import java.io.File
 import java.io.IOException
 import java.util.*
 
-
 class MainActivity : AppCompatActivity()
 {
     private val PERMISSION_CODE = 1000;
-    private val IMAGE_CAPTURE_CODE = 1
+    private val IMAGE_CAPTURE_CODE = 1001
     var image_uri: Uri? = null
     var isGalleryChoosen= false
     var isCameraChoosen = false
-    var currentPhotoPath: String = ""
+
 
     @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?)
@@ -95,27 +90,33 @@ class MainActivity : AppCompatActivity()
 
     }
 
+    private fun galleryAddPic(currentpath : String) {
+        Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).also { mediaScanIntent ->
+            val f = File(currentpath)
+            mediaScanIntent.data = Uri.fromFile(f)
+            sendBroadcast(mediaScanIntent)
+        }
+    }
 
-
-    @RequiresApi(Build.VERSION_CODES.N)
     @Throws(IOException::class)
     private fun createImageFile(): File {
 
         // Create an image file name
         val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val storageDir: File = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val storageDir: File = filesDir
         return File.createTempFile(
             "JPEG_${timeStamp}_", /* prefix */
             ".jpg", /* suffix */
             storageDir /* directory */
         ).apply {
             // Save a file: path for use with ACTION_VIEW intents
-            currentPhotoPath = absolutePath
+            galleryAddPic(absolutePath)
         }
+
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.N)
+
     private fun openCamera()
     {
 
@@ -127,15 +128,17 @@ class MainActivity : AppCompatActivity()
                     createImageFile()
                 } catch (ex: IOException) {
                     // Error occurred while creating the File
+                    Log.d("ERROR", "Error, can't create the image file")
                     null
                 }
                 // Continue only if the File was successfully created
                 photoFile?.also {
                     val photoURI: Uri = FileProvider.getUriForFile(
                         this,
-                        "com.example.android.fileprovider",
+                        BuildConfig.APPLICATION_ID + ".provider",
                         it
                     )
+
                     takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
                     image_uri = photoURI
                     isCameraChoosen = true
@@ -144,15 +147,12 @@ class MainActivity : AppCompatActivity()
             }
         }
 
-
-
-
     }
 
     private fun pickImageFromGallery()
     {
         //Intent to pick image
-        val imageIntent = Intent(Intent.ACTION_PICK)
+        val imageIntent = Intent(Intent.ACTION_GET_CONTENT)
         imageIntent.type = "image/*"
         isGalleryChoosen = true
         image_uri = null
@@ -167,14 +167,14 @@ class MainActivity : AppCompatActivity()
         private val PERMISSION_CODE = 1001;
     }
 
-    @RequiresApi(Build.VERSION_CODES.N)
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray)
     {
         //called when user presses ALLOW or DENY from Permission Request Popup
         when(requestCode){
             PERMISSION_CODE -> {
-                if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 {
+                    Log.d("Debug", "Permissions accepted")
                     //permission from popup was granted
                     //pickImageFromGallery()
                     //openCamera()
@@ -182,7 +182,7 @@ class MainActivity : AppCompatActivity()
                 else
                 {
                     //permission from popup was denied
-                    Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+                    Log.d("Debug", "Permissions denied")
                 }
             }
         }
@@ -190,20 +190,28 @@ class MainActivity : AppCompatActivity()
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
     {
+        super.onActivityResult(requestCode, resultCode, data)
         //called when image was captured from camera intent
         if (resultCode == Activity.RESULT_OK && data != null){
-            var true_imag_uri = ""
-            if(image_uri == null){
-                true_imag_uri = (data.data.toString())
 
-            }else{
+            var true_imag_uri = ""
+            if(isGalleryChoosen){
+                true_imag_uri = (data.data.toString())
+                isGalleryChoosen = false
+                Log.d("DEBUG", "Gallery action finished and processed")
+            }else if(isCameraChoosen){
                 true_imag_uri = image_uri.toString()
+                isCameraChoosen = false
+                Log.d("DEBUG", "Camera action finished and processed")
+            }else {
+                Log.d("DEBUG", "Error, action finished but no action code activated")
             }
             val intent = Intent(this, Analyse_Activity::class.java).apply {}
+            Log.d("DEBUG", "Image URI is : $true_imag_uri")
             intent.putExtra("imageUri", true_imag_uri)
             startActivity(intent)
         } else if (resultCode == Activity.RESULT_CANCELED) {
-
+            Log.d("DEBUG", "Action cancelled")
         }
 
     }
