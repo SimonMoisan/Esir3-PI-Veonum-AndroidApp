@@ -11,7 +11,11 @@
         android:id="@+id/analyse_image_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitCenter"/>
+        android:scaleType="fitCenter">
+        <!--Layout to create buttons dynamically-->
+
+    </ImageView>
+
 
     <!--Button to open camera-->
     <Button
@@ -37,12 +41,13 @@
         android:layout_marginBottom="20dp"
         android:text="@string/analyse_en" />
 
-    <!--Layout to create buttons dynamically-->
     <RelativeLayout
         android:id="@+id/dynamic_buttons_layout"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="wrap_content">
+
+
+
     </RelativeLayout>
 
 </RelativeLayout>

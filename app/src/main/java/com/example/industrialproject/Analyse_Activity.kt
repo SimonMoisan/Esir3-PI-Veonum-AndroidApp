@@ -23,6 +23,8 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.view.ViewGroup
 import android.widget.RelativeLayout
+import androidx.core.view.marginLeft
+import androidx.core.view.marginTop
 import java.io.IOException
 
 class Analyse_Activity : AppCompatActivity() {
@@ -129,7 +131,7 @@ class Analyse_Activity : AppCompatActivity() {
             val y1 = thisFace.position.y
             val x2 = x1 + thisFace.width
             val y2 = y1 + thisFace.height
-            tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 2f, 2f, rectPaint)
+            tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 40f, 40f, rectPaint)
 
             //Create button dynamically to be able to click on someone's face
             val dynamicButtonsLayout = findViewById(R.id.dynamic_buttons_layout) as RelativeLayout
@@ -138,7 +140,28 @@ class Analyse_Activity : AppCompatActivity() {
             val layout = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
             layout.width = (thisFace.width/1.7f).toInt()
             layout.height = (thisFace.height/1.7f).toInt()
-            layout.setMargins(x1.toInt(),y1.toInt(),0,0)
+
+            // These holds the ratios for the ImageView and the bitmap
+            val bitmapRatio  = bitmapToAnalyse.width /bitmapToAnalyse.height
+            val imageViewRatio  = analyse_image_view.width /analyse_image_view.height
+
+            val drawLeft:Int
+            val drawTop:Int
+
+            if(bitmapRatio > imageViewRatio) {
+                drawLeft = 0
+                val drawHeight = (imageViewRatio/bitmapRatio) * analyse_image_view.height
+                drawTop = (analyse_image_view.height - drawHeight)/2
+            }
+            else {
+                drawTop = 0;
+                val drawWidth = (bitmapRatio/imageViewRatio) * analyse_image_view.width
+                drawLeft = (analyse_image_view.width - drawWidth)/2
+            }
+
+            val x1dp = (x1 / this.resources.displayMetrics.density).toInt()
+            val y1dp = (y1 / this.resources.displayMetrics.density).toInt()
+            layout.setMargins(drawLeft,drawTop,0,0)
 
             buttonDynamic.layoutParams = layout
             buttonDynamic.alpha = 0.25f //transparency
@@ -158,6 +181,8 @@ class Analyse_Activity : AppCompatActivity() {
 
 
     }
+
+
 
     private fun facialReconstruction()
     {
