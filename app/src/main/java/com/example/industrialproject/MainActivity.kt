@@ -11,7 +11,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
@@ -21,12 +20,13 @@ import android.media.MediaScannerConnection
 import android.graphics.Bitmap
 import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Environment.getExternalStoragePublicDirectory
+import java.io.FileOutputStream
 import androidx.core.app.ComponentActivity
 import androidx.core.app.ComponentActivity.ExtraData
 import androidx.core.content.ContextCompat.getSystemService
 import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import android.os.Environment
-import java.io.FileOutputStream
+
+
 
 
 class MainActivity : AppCompatActivity()
@@ -103,7 +103,8 @@ class MainActivity : AppCompatActivity()
         val root = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString()
         val myDir = File(root + "/" + BuildConfig.APPLICATION_ID + "_pictures")
         myDir.mkdirs()
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+        val tsLong = System.currentTimeMillis() / 1000
+        val timeStamp = tsLong.toString()
         val fname = "Pic_$timeStamp.jpg"
         val file = File(myDir, fname)
         try {
@@ -129,7 +130,8 @@ class MainActivity : AppCompatActivity()
     private fun createImageFile(): File {
 
         // Create an image file name
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+        val tsLong = System.currentTimeMillis() / 1000
+        val timeStamp = tsLong.toString()
         val storageDir: File = filesDir
         return File.createTempFile(
             "JPEG_${timeStamp}_", /* prefix */
