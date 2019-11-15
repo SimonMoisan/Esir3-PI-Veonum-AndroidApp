@@ -37,4 +37,12 @@
         android:layout_marginBottom="20dp"
         android:text="@string/analyse_en" />
 
+    <!--Layout to create buttons dynamically-->
+    <RelativeLayout
+        android:id="@+id/dynamic_buttons_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+    </RelativeLayout>
+
 </RelativeLayout>

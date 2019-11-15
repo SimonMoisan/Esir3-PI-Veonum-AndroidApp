@@ -70,4 +70,5 @@
         android:background="@drawable/buttonselector_blue"
         android:text="@string/get_from_gallery_en" />
 
+
 </RelativeLayout>

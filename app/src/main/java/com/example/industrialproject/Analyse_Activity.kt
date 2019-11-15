@@ -19,13 +19,10 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-
-
-
+import android.widget.Button
+import android.widget.LinearLayout
+import android.view.ViewGroup
+import android.widget.RelativeLayout
 
 class Analyse_Activity : AppCompatActivity() {
 
@@ -34,6 +31,8 @@ class Analyse_Activity : AppCompatActivity() {
     var image_uri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        var analyseDone = false
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_analyse)
         var imageURI=intent.getStringExtra("imageUri")
@@ -48,32 +47,36 @@ class Analyse_Activity : AppCompatActivity() {
 
         analyse_btn.setOnClickListener{
             val image_uri:String = intent.getStringExtra("imageUri")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+
+            if(!analyseDone)
             {
-                if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED ||
-                    checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                 {
-                    //permission was not enabled
-                    val permission = arrayOf(
-                        Manifest.permission.CAMERA,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                    )
-                    //show popup to request permission
-                    requestPermissions(permission, PERMISSION_CODE)
+                    if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED ||
+                        checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED)
+                    {
+                        //permission was not enabled
+                        val permission = arrayOf(
+                            Manifest.permission.CAMERA,
+                            Manifest.permission.READ_EXTERNAL_STORAGE
+                        )
+                        //show popup to request permission
+                        requestPermissions(permission, PERMISSION_CODE)
+                    }
+                    else
+                    {
+                        //permission already granted
+                        analyseImage(image_uri)
+                    }
                 }
                 else
                 {
-                    //permission already granted
+                    //system os is < marshmallow
                     analyseImage(image_uri)
                 }
-            }
-            else
-            {
-                //system os is < marshmallow
-                analyseImage(image_uri)
+                analyseDone = true;
             }
         }
-
     }
 
     fun getDipFromPixels(px: Float): Float {
@@ -125,7 +128,8 @@ class Analyse_Activity : AppCompatActivity() {
 
         // Display rectangle for every detected face
         val scale = 1.0f
-        for (i in 0 until faces.size()) {
+        for (i in 0 until faces.size())
+        {
             val thisFace:Face = faces.valueAt(i)
             val x1 = thisFace.position.x
             val y1 = thisFace.position.y
@@ -133,14 +137,32 @@ class Analyse_Activity : AppCompatActivity() {
             val y2 = y1 + thisFace.height
             tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 2f, 2f, rectPaint)
 
+            //Create button dynamically to be able to click on someone's face
+            val dynamicButtonsLayout = findViewById(R.id.dynamic_buttons_layout) as RelativeLayout
+            val buttonDynamic = Button(this)
+            // setting layout_width and layout_height using layout parameters
+            val layout = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
+            layout.width = (thisFace.width/1.7f).toInt()
+            layout.height = (thisFace.height/1.7f).toInt()
+            layout.setMargins(x1.toInt(),y1.toInt(),0,0)
+
+            buttonDynamic.layoutParams = layout
+            buttonDynamic.alpha = 0.25f //transparency
+            // add Button to LinearLayout
+            dynamicButtonsLayout.addView(buttonDynamic)
+
             for (landmark in thisFace.landmarks) {
                 val cx = (landmark.position.x * scale)
                 val cy = (landmark.position.y * scale)
                 tempCanvas.drawCircle(cx, cy, getDipFromPixels(3.0f), circlePaint)
             }
-
         }
         analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
+    }
+
+    private fun facialReconstruction()
+    {
+        Toast.makeText(this, "Face reconstruction", Toast.LENGTH_SHORT).show()
     }
 
 }
