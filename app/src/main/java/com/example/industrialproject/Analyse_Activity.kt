@@ -23,6 +23,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.view.ViewGroup
 import android.widget.RelativeLayout
+import java.io.IOException
 
 class Analyse_Activity : AppCompatActivity() {
 
@@ -35,46 +36,30 @@ class Analyse_Activity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_analyse)
-        var imageURI=intent.getStringExtra("imageUri")
+        var imageURI = intent.getStringExtra("imageUri")
         Log.d("INFO", "message : " + imageURI)
         analyse_image_view.setImageURI(Uri.parse(imageURI))
 
-        go_back_btn.setOnClickListener{
+        go_back_btn.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java).apply {}
 
             startActivity(intent)
         }
 
-        analyse_btn.setOnClickListener{
-            val image_uri:String = intent.getStringExtra("imageUri")
+        analyse_btn.setOnClickListener {
+            val image_uri: String = intent.getStringExtra("imageUri")
 
-            if(!analyseDone)
-            {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                {
-                    if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED ||
-                        checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED)
-                    {
-                        //permission was not enabled
-                        val permission = arrayOf(
-                            Manifest.permission.CAMERA,
-                            Manifest.permission.READ_EXTERNAL_STORAGE
-                        )
-                        //show popup to request permission
-                        requestPermissions(permission, PERMISSION_CODE)
-                    }
-                    else
-                    {
-                        //permission already granted
-                        analyseImage(image_uri)
-                    }
-                }
-                else
-                {
-                    //system os is < marshmallow
+            if (!analyseDone) {
+
+                try {
                     analyseImage(image_uri)
+                    analyseDone = true
                 }
-                analyseDone = true;
+                catch (e: Exception){
+                    Log.d("ERROR", "Error : " + e.message + "\n" + e.cause)
+                    Toast.makeText(this, "Error :  " + e.message, Toast.LENGTH_SHORT).show()
+                }
+
             }
         }
     }
@@ -117,9 +102,16 @@ class Analyse_Activity : AppCompatActivity() {
             .setTrackingEnabled(false)
             .setLandmarkType(FaceDetector.ALL_LANDMARKS)
             .build()
-        if (!faceDetector.isOperational()) {
-            Toast.makeText(this, "Could not set up the face detector!", Toast.LENGTH_SHORT).show()
-            return
+
+        var faceDetectorTimeoutCounter = 1
+        while(!faceDetector.isOperational && faceDetectorTimeoutCounter < 11){
+            Toast.makeText(this,
+                "Could not set up the face detector!\nTry number $faceDetectorTimeoutCounter", Toast.LENGTH_SHORT).show()
+            Thread.sleep(500)
+            faceDetectorTimeoutCounter += 1
+        }
+        if(!faceDetector.isOperational){
+           throw ClassNotFoundException("FaceDetector can't work, check Google Play Service")
         }
 
         // Create a frame from the bitmap and detect faces
@@ -127,9 +119,11 @@ class Analyse_Activity : AppCompatActivity() {
         val faces = faceDetector.detect(frame)
 
         // Display rectangle for every detected face
+        var faceNumberDetected = 0
         val scale = 1.0f
         for (i in 0 until faces.size())
         {
+            faceNumberDetected += 1
             val thisFace:Face = faces.valueAt(i)
             val x1 = thisFace.position.x
             val y1 = thisFace.position.y
@@ -157,7 +151,12 @@ class Analyse_Activity : AppCompatActivity() {
                 tempCanvas.drawCircle(cx, cy, getDipFromPixels(3.0f), circlePaint)
             }
         }
+
+        Toast.makeText(this, "$faceNumberDetected face(s) detected", Toast.LENGTH_SHORT).show()
+
         analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
+
+
     }
 
     private fun facialReconstruction()
