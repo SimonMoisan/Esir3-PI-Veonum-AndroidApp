@@ -16,9 +16,12 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.FrameLayout
+import androidx.core.view.marginLeft
+import androidx.core.view.marginTop
 
 class Analyse_Activity : AppCompatActivity() {
 
@@ -30,6 +33,7 @@ class Analyse_Activity : AppCompatActivity() {
         var analyseDone = false
 
         super.onCreate(savedInstanceState)
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_analyse)
         var imageURI = intent.getStringExtra("imageUri")
         Log.d("INFO", "message : " + imageURI)
@@ -132,14 +136,26 @@ class Analyse_Activity : AppCompatActivity() {
             val buttonDynamic = Button(this)
             // setting layout_width and layout_height using layout parameters
             val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
-            layout.width = (thisFace.width).toInt()
-            layout.height = (thisFace.height).toInt()
+
+            val heightRatio = analyse_image_view.height / bitmapToAnalyse.height.toDouble()
+            val widthRatio = analyse_image_view.width / bitmapToAnalyse.width.toDouble()
+            Log.d("DEBUG","7775 HR = " + analyse_image_view.height +  " / " + bitmapToAnalyse.height + " = " + heightRatio )
+            Log.d("DEBUG","7775 WR = " + analyse_image_view.width +  " / " + bitmapToAnalyse.width + " = " + widthRatio )
+
+            var biggestRatio:Double = widthRatio
+            if (heightRatio < widthRatio) {
+                biggestRatio = heightRatio
+            }
+
+            layout.width = (thisFace.width * biggestRatio).toInt()
+            layout.height = (thisFace.height * biggestRatio).toInt()
 
             // These holds the ratios for the ImageView and the bitmap
 
-            val xMarging = analyse_image_view.left
-            val yMarging = analyse_image_view.top
-            layout.setMargins(xMarging + x1.toInt(), yMarging + y1.toInt(),0,0)
+            val dynamicLayoutX = analyse_image_view.left + (x1 * widthRatio).toInt()
+            val dynamicLayoutY = analyse_image_view.top + (y1 * heightRatio).toInt()
+
+            layout.setMargins(dynamicLayoutX, dynamicLayoutY,0,0)
 
             buttonDynamic.layoutParams = layout
             buttonDynamic.alpha = 0.25f //transparency
