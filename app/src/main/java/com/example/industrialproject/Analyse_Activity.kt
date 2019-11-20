@@ -29,7 +29,7 @@ import java.io.IOException
 
 class Analyse_Activity : AppCompatActivity() {
 
-    private val PERMISSION_CODE = 1000;
+    private val PERMISSION_CODE = 1000
     private val IMAGE_CAPTURE_CODE = 1001
     var image_uri: Uri? = null
 
@@ -134,7 +134,7 @@ class Analyse_Activity : AppCompatActivity() {
             tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 40f, 40f, rectPaint)
 
             //Create button dynamically to be able to click on someone's face
-            val dynamicButtonsLayout = findViewById(R.id.dynamic_buttons_layout) as RelativeLayout
+            val dynamicButtonsLayout = findViewById<RelativeLayout>(R.id.dynamic_buttons_layout)
             val buttonDynamic = Button(this)
             // setting layout_width and layout_height using layout parameters
             val layout = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
