@@ -42,13 +42,14 @@
         android:layout_marginBottom="20dp"
         android:text="@string/analyse_en" />
 
-    <ConstraintLayout
+    <FrameLayout
         android:id="@+id/dynamic_buttons_layout"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
 
 
 
-    </ConstraintLayout>
+    </FrameLayout>
 
 </RelativeLayout>

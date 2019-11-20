@@ -1,15 +1,12 @@
 package com.example.industrialproject
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.*
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import kotlinx.android.synthetic.main.activity_analyse.*
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import com.google.android.gms.vision.Frame
 import com.google.android.gms.vision.face.Face
@@ -21,11 +18,7 @@ import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
 import android.widget.Button
 import android.widget.LinearLayout
-import android.view.ViewGroup
-import android.widget.RelativeLayout
-import androidx.core.view.marginLeft
-import androidx.core.view.marginTop
-import java.io.IOException
+import android.widget.FrameLayout
 
 class Analyse_Activity : AppCompatActivity() {
 
@@ -113,7 +106,8 @@ class Analyse_Activity : AppCompatActivity() {
             faceDetectorTimeoutCounter += 1
         }
         if(!faceDetector.isOperational){
-           throw ClassNotFoundException("FaceDetector can't work, check Google Play Service")
+            faceDetector.release()
+            throw ClassNotFoundException("FaceDetector can't work, check Google Play Service")
         }
 
         // Create a frame from the bitmap and detect faces
@@ -131,23 +125,21 @@ class Analyse_Activity : AppCompatActivity() {
             val y1 = thisFace.position.y
             val x2 = x1 + thisFace.width
             val y2 = y1 + thisFace.height
-            tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 40f, 40f, rectPaint)
+            tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 10f, 10f, rectPaint)
 
             //Create button dynamically to be able to click on someone's face
-            val dynamicButtonsLayout = findViewById<RelativeLayout>(R.id.dynamic_buttons_layout)
+            val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
             val buttonDynamic = Button(this)
             // setting layout_width and layout_height using layout parameters
-            val layout = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
-            layout.width = (thisFace.width/1.7f).toInt()
-            layout.height = (thisFace.height/1.7f).toInt()
+            val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
+            layout.width = (thisFace.width).toInt()
+            layout.height = (thisFace.height).toInt()
 
             // These holds the ratios for the ImageView and the bitmap
 
-            val x1dp = (x1 / this.resources.displayMetrics.density).toInt()
-            val y1dp = (y1 / this.resources.displayMetrics.density).toInt()
             val xMarging = analyse_image_view.left
             val yMarging = analyse_image_view.top
-            layout.setMargins(xMarging + x1dp, yMarging + y1dp,0,0)
+            layout.setMargins(xMarging + x1.toInt(), yMarging + y1.toInt(),0,0)
 
             buttonDynamic.layoutParams = layout
             buttonDynamic.alpha = 0.25f //transparency
