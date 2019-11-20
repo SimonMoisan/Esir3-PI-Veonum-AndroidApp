@@ -142,26 +142,12 @@ class Analyse_Activity : AppCompatActivity() {
             layout.height = (thisFace.height/1.7f).toInt()
 
             // These holds the ratios for the ImageView and the bitmap
-            val bitmapRatio  = bitmapToAnalyse.width /bitmapToAnalyse.height
-            val imageViewRatio  = analyse_image_view.width /analyse_image_view.height
-
-            val drawLeft:Int
-            val drawTop:Int
-
-            if(bitmapRatio > imageViewRatio) {
-                drawLeft = 0
-                val drawHeight = (imageViewRatio/bitmapRatio) * analyse_image_view.height
-                drawTop = (analyse_image_view.height - drawHeight)/2
-            }
-            else {
-                drawTop = 0;
-                val drawWidth = (bitmapRatio/imageViewRatio) * analyse_image_view.width
-                drawLeft = (analyse_image_view.width - drawWidth)/2
-            }
 
             val x1dp = (x1 / this.resources.displayMetrics.density).toInt()
             val y1dp = (y1 / this.resources.displayMetrics.density).toInt()
-            layout.setMargins(drawLeft,drawTop,0,0)
+            val xMarging = analyse_image_view.left
+            val yMarging = analyse_image_view.top
+            layout.setMargins(xMarging + x1dp, yMarging + y1dp,0,0)
 
             buttonDynamic.layoutParams = layout
             buttonDynamic.alpha = 0.25f //transparency
