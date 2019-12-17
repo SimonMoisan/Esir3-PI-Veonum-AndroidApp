@@ -27,6 +27,9 @@ import androidx.core.app.ComponentActivity
 import androidx.core.app.ComponentActivity.ExtraData
 import androidx.core.content.ContextCompat.getSystemService
 import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+import android.view.WindowManager
+import androidx.core.view.marginLeft
+import androidx.core.view.marginTop
 
 class Analyse_Activity : AppCompatActivity() {
 
@@ -40,6 +43,7 @@ class Analyse_Activity : AppCompatActivity() {
         var analyseDone = false
 
         super.onCreate(savedInstanceState)
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_analyse)
         var imageURI = intent.getStringExtra("imageUri")
         Log.d("INFO", "message : " + imageURI)
@@ -150,13 +154,29 @@ class Analyse_Activity : AppCompatActivity() {
 
             // setting layout_width and layout_height using layout parameters
             val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
-            layout.width = (thisFace.width).toInt()
-            layout.height = (thisFace.height).toInt()
+
+            val heightRatio = analyse_image_view.height / bitmapToAnalyse.height.toDouble()
+            val widthRatio = analyse_image_view.width / bitmapToAnalyse.width.toDouble()
+            Log.d("DEBUG","7775 HR = " + analyse_image_view.height +  " / " + bitmapToAnalyse.height + " = " + heightRatio )
+            Log.d("DEBUG","7775 WR = " + analyse_image_view.width +  " / " + bitmapToAnalyse.width + " = " + widthRatio )
+
+            var biggestRatio:Double = widthRatio
+            if (heightRatio < widthRatio) {
+                biggestRatio = heightRatio
+            }
+
+            layout.width = (thisFace.width * biggestRatio).toInt()
+            layout.height = (thisFace.height * biggestRatio).toInt()
 
             // These holds the ratios for the ImageView and the bitmap
             val xMarging = analyse_image_view.left
             val yMarging = analyse_image_view.top
             layout.setMargins(xMarging + x1.toInt(), yMarging + y1.toInt(),0,0)
+
+            val dynamicLayoutX = analyse_image_view.left + (x1 * widthRatio).toInt()
+            val dynamicLayoutY = analyse_image_view.top + (y1 * heightRatio).toInt()
+
+            layout.setMargins(dynamicLayoutX, dynamicLayoutY,0,0)
 
             buttonDynamicFace.layoutParams = layout
             buttonDynamicFace.alpha = 0.1f //transparency
@@ -164,7 +184,6 @@ class Analyse_Activity : AppCompatActivity() {
             // add Button to layout and to the list
             dynamicButtonsLayout.addView(buttonDynamicFace)
             listOfButtons.add(buttonDynamicFace)
-            buttonsActive.add(false)
 
             //Add landmark on eyes, mouth, etc...
             for (landmark in thisFace.landmarks) {
@@ -192,7 +211,6 @@ class Analyse_Activity : AppCompatActivity() {
                 {
                     val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
                     dynamicButtonsLayout.removeView(faceFeatureButton)
-                    //faceFeatureButton.visibility = View.GONE
                     faceFeatureButton = displayFacialFeatureButtons(button.x, button.y)
                 }
             })
