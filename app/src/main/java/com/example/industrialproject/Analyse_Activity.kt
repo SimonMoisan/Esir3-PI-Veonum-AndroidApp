@@ -14,17 +14,27 @@ import com.google.android.gms.vision.face.FaceDetector
 import android.widget.Toast
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
+import android.util.LogPrinter
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
+import android.view.MotionEvent
+import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.FrameLayout
+import android.widget.RelativeLayout
+import androidx.core.app.ComponentActivity
+import androidx.core.app.ComponentActivity.ExtraData
+import androidx.core.content.ContextCompat.getSystemService
+import android.icu.lang.UCharacter.GraphemeClusterBreak.T
 
 class Analyse_Activity : AppCompatActivity() {
 
     private val PERMISSION_CODE = 1000
     private val IMAGE_CAPTURE_CODE = 1001
     var image_uri: Uri? = null
+    //Indicate if a button feature is already active on the image
+    var buttonFeatureIsActive = false;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         var analyseDone = false
@@ -58,6 +68,8 @@ class Analyse_Activity : AppCompatActivity() {
             }
         }
     }
+
+
 
     fun getDipFromPixels(px: Float): Float {
         return TypedValue.applyDimension(
@@ -117,6 +129,11 @@ class Analyse_Activity : AppCompatActivity() {
         // Display rectangle for every detected face
         var faceNumberDetected = 0
         val scale = 1.0f
+
+        //Create face selection buttons
+        var listOfButtons: MutableList<Button> = mutableListOf()
+        var buttonsActive: MutableList<Boolean> = mutableListOf()
+
         for (i in 0 until faces.size())
         {
             faceNumberDetected += 1
@@ -129,23 +146,27 @@ class Analyse_Activity : AppCompatActivity() {
 
             //Create button dynamically to be able to click on someone's face
             val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
-            val buttonDynamic = Button(this)
+            val buttonDynamicFace = Button(this)
+
             // setting layout_width and layout_height using layout parameters
             val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
             layout.width = (thisFace.width).toInt()
             layout.height = (thisFace.height).toInt()
 
             // These holds the ratios for the ImageView and the bitmap
-
             val xMarging = analyse_image_view.left
             val yMarging = analyse_image_view.top
             layout.setMargins(xMarging + x1.toInt(), yMarging + y1.toInt(),0,0)
 
-            buttonDynamic.layoutParams = layout
-            buttonDynamic.alpha = 0.25f //transparency
-            // add Button to LinearLayout
-            dynamicButtonsLayout.addView(buttonDynamic)
+            buttonDynamicFace.layoutParams = layout
+            buttonDynamicFace.alpha = 0.1f //transparency
 
+            // add Button to layout and to the list
+            dynamicButtonsLayout.addView(buttonDynamicFace)
+            listOfButtons.add(buttonDynamicFace)
+            buttonsActive.add(false)
+
+            //Add landmark on eyes, mouth, etc...
             for (landmark in thisFace.landmarks) {
                 val cx = (landmark.position.x * scale)
                 val cy = (landmark.position.y * scale)
@@ -153,14 +174,53 @@ class Analyse_Activity : AppCompatActivity() {
             }
         }
 
+
+        //Set listener for every buttons created
+        var compteur = 0
+        var faceFeatureButton = Button(this)
+        for(button in listOfButtons)
+        {
+            //Add button onClickListener
+            button.setOnClickListener(View.OnClickListener {
+                //Add face option buttons
+                if(!buttonFeatureIsActive) //if no button activate
+                {
+                    faceFeatureButton = displayFacialFeatureButtons(button.x, button.y)
+                    buttonFeatureIsActive = true
+                }
+                else //Remove other regeneration button
+                {
+                    val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
+                    dynamicButtonsLayout.removeView(faceFeatureButton)
+                    //faceFeatureButton.visibility = View.GONE
+                    faceFeatureButton = displayFacialFeatureButtons(button.x, button.y)
+                }
+            })
+        }
+
         Toast.makeText(this, "$faceNumberDetected face(s) detected", Toast.LENGTH_SHORT).show()
 
         analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
-
-
     }
 
+    private fun displayFacialFeatureButtons(parentButtonX:Float, parentButtonY:Float) : Button
+    {
+        val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
+        val buttonFacialFeature = Button(this)
 
+        val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
+
+        layout.setMargins(parentButtonX.toInt(), parentButtonY.toInt(),0,0)
+        buttonFacialFeature.text = "Regeneration"
+        buttonFacialFeature.layoutParams = layout
+
+        // add Button to layout
+        dynamicButtonsLayout.addView(buttonFacialFeature)
+
+        buttonFeatureIsActive = true
+
+        return buttonFacialFeature
+    }
 
     private fun facialReconstruction()
     {
