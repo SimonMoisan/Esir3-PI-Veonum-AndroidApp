@@ -12,6 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
         android:layout_centerInParent="true">
         <!--Layout to create buttons dynamically-->
 
@@ -55,10 +56,9 @@
         android:id="@+id/dynamic_buttons_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@+id/analyse_image_view"
+        app:layout_constraintLeft_toLeftOf="@+id/analyse_image_view"
         android:orientation="horizontal">
-
-
-
     </FrameLayout>
 
 </RelativeLayout>
