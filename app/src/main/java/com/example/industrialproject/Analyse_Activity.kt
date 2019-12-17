@@ -14,22 +14,12 @@ import com.google.android.gms.vision.face.FaceDetector
 import android.widget.Toast
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
-import android.util.LogPrinter
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
-import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
-import android.widget.LinearLayout
 import android.widget.FrameLayout
-import android.widget.RelativeLayout
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
 import android.view.WindowManager
-import androidx.core.view.marginLeft
-import androidx.core.view.marginTop
 
 class Analyse_Activity : AppCompatActivity() {
 
@@ -136,7 +126,7 @@ class Analyse_Activity : AppCompatActivity() {
 
         //Create face selection buttons
         var listOfButtons: MutableList<Button> = mutableListOf()
-        var buttonsActive: MutableList<Boolean> = mutableListOf()
+        var listOffFaceValues: MutableList<List<Float>> = mutableListOf()
 
         for (i in 0 until faces.size())
         {
@@ -157,8 +147,6 @@ class Analyse_Activity : AppCompatActivity() {
 
             val heightRatio = analyse_image_view.height / bitmapToAnalyse.height.toDouble()
             val widthRatio = analyse_image_view.width / bitmapToAnalyse.width.toDouble()
-            Log.d("DEBUG","7775 HR = " + analyse_image_view.height +  " / " + bitmapToAnalyse.height + " = " + heightRatio )
-            Log.d("DEBUG","7775 WR = " + analyse_image_view.width +  " / " + bitmapToAnalyse.width + " = " + widthRatio )
 
             var biggestRatio:Double = widthRatio
 
@@ -181,6 +169,10 @@ class Analyse_Activity : AppCompatActivity() {
             dynamicButtonsLayout.addView(buttonDynamicFace)
             listOfButtons.add(buttonDynamicFace)
 
+            // add values (x, y, width and height) to a list for later use
+            val tempList = listOf(x1, y1, x2, y2)
+            listOffFaceValues.add(tempList)
+
             //Add landmark on eyes, mouth, etc...
             for (landmark in thisFace.landmarks) {
                 val cx = (landmark.position.x * scale)
@@ -191,7 +183,6 @@ class Analyse_Activity : AppCompatActivity() {
 
 
         //Set listener for every buttons created
-        var compteur = 0
         var faceFeatureButton = Button(this)
         for(button in listOfButtons)
         {
