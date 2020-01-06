@@ -14,22 +14,12 @@ import com.google.android.gms.vision.face.FaceDetector
 import android.widget.Toast
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
-import android.util.LogPrinter
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
-import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
-import android.widget.LinearLayout
 import android.widget.FrameLayout
-import android.widget.RelativeLayout
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
 import android.view.WindowManager
-import androidx.core.view.marginLeft
-import androidx.core.view.marginTop
 
 class Analyse_Activity : AppCompatActivity() {
 
@@ -73,8 +63,6 @@ class Analyse_Activity : AppCompatActivity() {
         }
     }
 
-
-
     fun getDipFromPixels(px: Float): Float {
         return TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_PX,
@@ -113,14 +101,7 @@ class Analyse_Activity : AppCompatActivity() {
             .setTrackingEnabled(false)
             .setLandmarkType(FaceDetector.ALL_LANDMARKS)
             .build()
-
-        var faceDetectorTimeoutCounter = 1
-        while(!faceDetector.isOperational && faceDetectorTimeoutCounter < 11){
-            Toast.makeText(this,
-                "Could not set up the face detector!\nTry number $faceDetectorTimeoutCounter", Toast.LENGTH_SHORT).show()
-            Thread.sleep(500)
-            faceDetectorTimeoutCounter += 1
-        }
+        
         if(!faceDetector.isOperational){
             faceDetector.release()
             throw ClassNotFoundException("FaceDetector can't work, check Google Play Service")
@@ -136,7 +117,7 @@ class Analyse_Activity : AppCompatActivity() {
 
         //Create face selection buttons
         var listOfButtons: MutableList<Button> = mutableListOf()
-        var buttonsActive: MutableList<Boolean> = mutableListOf()
+        var listOffFaceValues: MutableList<List<Float>> = mutableListOf()
 
         for (i in 0 until faces.size())
         {
@@ -157,24 +138,18 @@ class Analyse_Activity : AppCompatActivity() {
 
             val heightRatio = analyse_image_view.height / bitmapToAnalyse.height.toDouble()
             val widthRatio = analyse_image_view.width / bitmapToAnalyse.width.toDouble()
-            Log.d("DEBUG","7775 HR = " + analyse_image_view.height +  " / " + bitmapToAnalyse.height + " = " + heightRatio )
-            Log.d("DEBUG","7775 WR = " + analyse_image_view.width +  " / " + bitmapToAnalyse.width + " = " + widthRatio )
 
             var biggestRatio:Double = widthRatio
-            if (heightRatio < widthRatio) {
+
+            if (heightRatio < widthRatio && heightRatio < 1) {
                 biggestRatio = heightRatio
             }
 
+            var dynamicLayoutX = analyse_image_view.left + (x1 * biggestRatio).toInt()
+            var dynamicLayoutY = analyse_image_view.top + (y1 * biggestRatio).toInt()
+
             layout.width = (thisFace.width * biggestRatio).toInt()
             layout.height = (thisFace.height * biggestRatio).toInt()
-
-            // These holds the ratios for the ImageView and the bitmap
-            val xMarging = analyse_image_view.left
-            val yMarging = analyse_image_view.top
-            layout.setMargins(xMarging + x1.toInt(), yMarging + y1.toInt(),0,0)
-
-            val dynamicLayoutX = analyse_image_view.left + (x1 * widthRatio).toInt()
-            val dynamicLayoutY = analyse_image_view.top + (y1 * heightRatio).toInt()
 
             layout.setMargins(dynamicLayoutX, dynamicLayoutY,0,0)
 
@@ -184,6 +159,10 @@ class Analyse_Activity : AppCompatActivity() {
             // add Button to layout and to the list
             dynamicButtonsLayout.addView(buttonDynamicFace)
             listOfButtons.add(buttonDynamicFace)
+
+            // add values (x, y, width and height) to a list for later use
+            val tempList = listOf(x1, y1, x2, y2)
+            listOffFaceValues.add(tempList)
 
             //Add landmark on eyes, mouth, etc...
             for (landmark in thisFace.landmarks) {
@@ -195,7 +174,6 @@ class Analyse_Activity : AppCompatActivity() {
 
 
         //Set listener for every buttons created
-        var compteur = 0
         var faceFeatureButton = Button(this)
         for(button in listOfButtons)
         {
@@ -231,6 +209,7 @@ class Analyse_Activity : AppCompatActivity() {
         layout.setMargins(parentButtonX.toInt(), parentButtonY.toInt(),0,0)
         buttonFacialFeature.text = "Regeneration"
         buttonFacialFeature.layoutParams = layout
+        buttonFacialFeature.setLines(1)
 
         // add Button to layout
         dynamicButtonsLayout.addView(buttonFacialFeature)

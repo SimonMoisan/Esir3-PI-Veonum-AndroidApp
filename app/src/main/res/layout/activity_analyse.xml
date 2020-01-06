@@ -12,6 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
         android:layout_centerInParent="true">
         <!--Layout to create buttons dynamically-->
 
@@ -29,16 +30,10 @@
         android:layout_marginEnd="22dp"
         android:layout_marginRight="22dp"
         android:layout_marginBottom="20dp"
+        android:textColor="#ffffff"
+        android:background="@drawable/buttonanalyse_pink"
         android:text="@string/go_back_en" />
 
-    <!--<Button
-        android:id="@+id/buttonDeleter"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerInParent="true"
-        android:background="@android:color/transparent">
-
-    </Button>-->
 
     <!--Button to start face detection-->
     <Button
@@ -49,16 +44,17 @@
         android:layout_alignParentBottom="true"
         android:layout_marginLeft="22dp"
         android:layout_marginBottom="20dp"
+        android:background="@drawable/buttonanalyse_blue"
+        android:textColor="#ffffff"
         android:text="@string/analyse_en" />
 
     <FrameLayout
         android:id="@+id/dynamic_buttons_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@+id/analyse_image_view"
+        app:layout_constraintLeft_toLeftOf="@+id/analyse_image_view"
         android:orientation="horizontal">
-
-
-
     </FrameLayout>
 
 </RelativeLayout>
