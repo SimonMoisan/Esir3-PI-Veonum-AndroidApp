@@ -101,7 +101,7 @@ class Analyse_Activity : AppCompatActivity() {
             .setTrackingEnabled(false)
             .setLandmarkType(FaceDetector.ALL_LANDMARKS)
             .build()
-        
+
         if(!faceDetector.isOperational){
             faceDetector.release()
             throw ClassNotFoundException("FaceDetector can't work, check Google Play Service")
@@ -182,14 +182,14 @@ class Analyse_Activity : AppCompatActivity() {
                 //Add face option buttons
                 if(!buttonFeatureIsActive) //if no button activate
                 {
-                    faceFeatureButton = displayFacialFeatureButtons(button.x, button.y)
+                    faceFeatureButton = displayFacialFeatureButtons(button)
                     buttonFeatureIsActive = true
                 }
                 else //Remove other regeneration button
                 {
                     val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
                     dynamicButtonsLayout.removeView(faceFeatureButton)
-                    faceFeatureButton = displayFacialFeatureButtons(button.x, button.y)
+                    faceFeatureButton = displayFacialFeatureButtons(button)
                 }
             })
         }
@@ -199,14 +199,14 @@ class Analyse_Activity : AppCompatActivity() {
         analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
     }
 
-    private fun displayFacialFeatureButtons(parentButtonX:Float, parentButtonY:Float) : Button
+    private fun displayFacialFeatureButtons(parentButton:Button) : Button
     {
         val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
         val buttonFacialFeature = Button(this)
 
         val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
 
-        layout.setMargins(parentButtonX.toInt(), parentButtonY.toInt(),0,0)
+        layout.setMargins(parentButton.right , parentButton.top,0,0)
         buttonFacialFeature.text = "Regeneration"
         buttonFacialFeature.layoutParams = layout
         buttonFacialFeature.setLines(1)
