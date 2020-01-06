@@ -11,14 +11,13 @@
         android:text="@string/prerequisite_initial_text"
         android:textSize="50sp" />
 
-    <ImageView
+    <WebView
         android:id="@+id/icon_view_prerequisite"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:adjustViewBounds="true"
-        android:scaleType="fitCenter"
-        android:src="@drawable/loading_open_source" />
+        android:scaleType="fitCenter"/>
 
     <TextView
         android:id="@+id/text_view_prerequisite_details"
