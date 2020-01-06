@@ -30,6 +30,7 @@
         android:layout_marginEnd="22dp"
         android:layout_marginRight="22dp"
         android:layout_marginBottom="20dp"
+        android:textColor="#ffffff"
         android:background="@drawable/buttonanalyse_pink"
         android:text="@string/go_back_en" />
 
@@ -44,6 +45,7 @@
         android:layout_marginLeft="22dp"
         android:layout_marginBottom="20dp"
         android:background="@drawable/buttonanalyse_blue"
+        android:textColor="#ffffff"
         android:text="@string/analyse_en" />
 
     <FrameLayout

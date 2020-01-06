@@ -246,8 +246,10 @@ class MainActivity : AppCompatActivity()
 
     }
     override fun onBackPressed() {
-        finishAffinity()
-        System.exit(0)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            finishAffinity()
+        }
+        exitProcess(0)
     }
 
 }
