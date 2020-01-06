@@ -101,14 +101,7 @@ class Analyse_Activity : AppCompatActivity() {
             .setTrackingEnabled(false)
             .setLandmarkType(FaceDetector.ALL_LANDMARKS)
             .build()
-
-        var faceDetectorTimeoutCounter = 1
-        while(!faceDetector.isOperational && faceDetectorTimeoutCounter < 11){
-            Toast.makeText(this,
-                "Could not set up the face detector!\nTry number $faceDetectorTimeoutCounter", Toast.LENGTH_SHORT).show()
-            Thread.sleep(500)
-            faceDetectorTimeoutCounter += 1
-        }
+        
         if(!faceDetector.isOperational){
             faceDetector.release()
             throw ClassNotFoundException("FaceDetector can't work, check Google Play Service")
