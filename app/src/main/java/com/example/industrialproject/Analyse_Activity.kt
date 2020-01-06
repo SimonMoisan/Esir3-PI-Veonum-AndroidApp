@@ -240,6 +240,21 @@ class Analyse_Activity : AppCompatActivity() {
         return buttonFacialFeature
     }
 
+    private fun computeFace(posX:Int, posY:Int, faceHeight:Int, faceWidth:Int, currentBitmap:Bitmap):Bitmap{
+
+        val res:Bitmap = Bitmap.createBitmap(faceWidth, faceHeight, Bitmap.Config.RGB_565)
+
+        // Copy selected face into a bitmap
+        for(x in 0 until faceWidth){
+            for(y in 0 until faceHeight){
+                val pix = currentBitmap.getPixel(x + posX, y + posY)
+                res.setPixel(x, y, pix)
+            }
+        }
+        return res
+    }
+
+
     private fun facialReconstruction()
     {
         Toast.makeText(this, "Face reconstruction", Toast.LENGTH_SHORT).show()
