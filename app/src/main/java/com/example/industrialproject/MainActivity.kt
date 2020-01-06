@@ -18,7 +18,6 @@ import android.media.MediaScannerConnection
 import android.graphics.Bitmap
 import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Environment.getExternalStoragePublicDirectory
-import android.view.Window
 import android.view.WindowManager
 import java.io.FileOutputStream
 

@@ -14,22 +14,12 @@ import com.google.android.gms.vision.face.FaceDetector
 import android.widget.Toast
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
-import android.util.LogPrinter
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
-import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
-import android.widget.LinearLayout
 import android.widget.FrameLayout
-import android.widget.RelativeLayout
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
 import android.view.WindowManager
-import androidx.core.view.marginLeft
-import androidx.core.view.marginTop
 
 class Analyse_Activity : AppCompatActivity() {
 
@@ -72,8 +62,6 @@ class Analyse_Activity : AppCompatActivity() {
             }
         }
     }
-
-
 
     fun getDipFromPixels(px: Float): Float {
         return TypedValue.applyDimension(
@@ -195,7 +183,6 @@ class Analyse_Activity : AppCompatActivity() {
 
 
         //Set listener for every buttons created
-        var compteur = 0
         var faceFeatureButton = Button(this)
         for(button in listOfButtons)
         {
@@ -231,6 +218,7 @@ class Analyse_Activity : AppCompatActivity() {
         layout.setMargins(parentButtonX.toInt(), parentButtonY.toInt(),0,0)
         buttonFacialFeature.text = "Regeneration"
         buttonFacialFeature.layoutParams = layout
+        buttonFacialFeature.setLines(1)
 
         // add Button to layout
         dynamicButtonsLayout.addView(buttonFacialFeature)

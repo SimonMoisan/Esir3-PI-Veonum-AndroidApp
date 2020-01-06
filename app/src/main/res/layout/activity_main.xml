@@ -41,7 +41,6 @@
         android:src="@drawable/no_picture_icon" />
 
     <Button
-
         android:id="@+id/capture_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
