@@ -124,7 +124,7 @@ class Analyse_Activity : AppCompatActivity() {
 
         //Create face selection buttons
         var listOfButtons: MutableList<Button> = mutableListOf()
-        var buttonsActive: MutableList<Boolean> = mutableListOf()
+        var listOffFaceValues: MutableList<List<Float>> = mutableListOf()
 
         for (i in 0 until faces.size())
         {
@@ -145,24 +145,18 @@ class Analyse_Activity : AppCompatActivity() {
 
             val heightRatio = analyse_image_view.height / bitmapToAnalyse.height.toDouble()
             val widthRatio = analyse_image_view.width / bitmapToAnalyse.width.toDouble()
-            Log.d("DEBUG","7775 HR = " + analyse_image_view.height +  " / " + bitmapToAnalyse.height + " = " + heightRatio )
-            Log.d("DEBUG","7775 WR = " + analyse_image_view.width +  " / " + bitmapToAnalyse.width + " = " + widthRatio )
 
             var biggestRatio:Double = widthRatio
-            if (heightRatio < widthRatio) {
+
+            if (heightRatio < widthRatio && heightRatio < 1) {
                 biggestRatio = heightRatio
             }
 
+            var dynamicLayoutX = analyse_image_view.left + (x1 * biggestRatio).toInt()
+            var dynamicLayoutY = analyse_image_view.top + (y1 * biggestRatio).toInt()
+
             layout.width = (thisFace.width * biggestRatio).toInt()
             layout.height = (thisFace.height * biggestRatio).toInt()
-
-            // These holds the ratios for the ImageView and the bitmap
-            val xMarging = analyse_image_view.left
-            val yMarging = analyse_image_view.top
-            layout.setMargins(xMarging + x1.toInt(), yMarging + y1.toInt(),0,0)
-
-            val dynamicLayoutX = analyse_image_view.left + (x1 * widthRatio).toInt()
-            val dynamicLayoutY = analyse_image_view.top + (y1 * heightRatio).toInt()
 
             layout.setMargins(dynamicLayoutX, dynamicLayoutY,0,0)
 
@@ -172,6 +166,10 @@ class Analyse_Activity : AppCompatActivity() {
             // add Button to layout and to the list
             dynamicButtonsLayout.addView(buttonDynamicFace)
             listOfButtons.add(buttonDynamicFace)
+
+            // add values (x, y, width and height) to a list for later use
+            val tempList = listOf(x1, y1, x2, y2)
+            listOffFaceValues.add(tempList)
 
             //Add landmark on eyes, mouth, etc...
             for (landmark in thisFace.landmarks) {

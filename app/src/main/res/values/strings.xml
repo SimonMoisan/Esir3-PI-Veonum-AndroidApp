@@ -4,4 +4,5 @@
     <string name="capture_image_en">Capture Image</string>
     <string name="go_back_en">Go back</string>
     <string name="analyse_en">Analyse</string>
+    <string name="prerequisite_initial_text">Loading...</string>
 </resources>

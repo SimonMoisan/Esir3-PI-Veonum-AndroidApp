@@ -20,6 +20,12 @@ import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Environment.getExternalStoragePublicDirectory
 import android.view.WindowManager
 import java.io.FileOutputStream
+import androidx.core.app.ComponentActivity
+import androidx.core.app.ComponentActivity.ExtraData
+import androidx.core.content.ContextCompat.getSystemService
+import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+import kotlin.system.exitProcess
+
 
 class MainActivity : AppCompatActivity()
 {
@@ -239,6 +245,10 @@ class MainActivity : AppCompatActivity()
             Log.d("DEBUG", "Action cancelled")
         }
 
+    }
+    override fun onBackPressed() {
+        finishAffinity()
+        System.exit(0)
     }
 
 }
