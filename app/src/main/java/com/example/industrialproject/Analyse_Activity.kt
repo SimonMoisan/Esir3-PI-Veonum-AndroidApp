@@ -63,6 +63,8 @@ class Analyse_Activity : AppCompatActivity() {
         }
     }
 
+
+
     fun getDipFromPixels(px: Float): Float {
         return TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_PX,
@@ -197,6 +199,11 @@ class Analyse_Activity : AppCompatActivity() {
                     val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
                     dynamicButtonsLayout.removeView(faceFeatureButton)
                     faceFeatureButton = displayFacialFeatureButtons(button.x, button.y)
+                }
+
+                faceFeatureButton.setOnClickListener()
+                {
+                    facialReconstruction()
                 }
             })
         }
