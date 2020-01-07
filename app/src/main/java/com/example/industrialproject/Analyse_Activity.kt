@@ -3,6 +3,7 @@ package com.example.industrialproject
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.*
+import android.graphics.Bitmap.createBitmap
 import android.graphics.Bitmap.createScaledBitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -15,21 +16,23 @@ import com.google.android.gms.vision.face.FaceDetector
 import android.widget.Toast
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
+import android.provider.MediaStore
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
 import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
 import android.view.WindowManager
+import android.widget.ImageView
 import androidx.core.graphics.createBitmap
 
 class Analyse_Activity : AppCompatActivity() {
 
     private val PERMISSION_CODE = 1000
     private val IMAGE_CAPTURE_CODE = 1001
-    var image_uri: Uri? = null
+    var imageURI: Uri? = null
     //Indicate if a button feature is already active on the image
-    var buttonFeatureIsActive = false;
+    var buttonFeatureIsActive = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         var analyseDone = false
@@ -37,9 +40,9 @@ class Analyse_Activity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_analyse)
-        var imageURI = intent.getStringExtra("imageUri")
-        Log.d("INFO", "message : " + imageURI)
-        analyse_image_view.setImageURI(Uri.parse(imageURI))
+        imageURI = Uri.parse(intent.getStringExtra("imageUri"))
+        Log.d("INFO", "message : $imageURI")
+        analyse_image_view.setImageURI(imageURI)
 
         go_back_btn.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java).apply {}
@@ -48,12 +51,12 @@ class Analyse_Activity : AppCompatActivity() {
         }
 
         analyse_btn.setOnClickListener {
-            val image_uri: String = intent.getStringExtra("imageUri")
+            val imageURI: String = intent.getStringExtra("imageUri")
 
             if (!analyseDone) {
 
                 try {
-                    analyseImage(image_uri)
+                    analyseImage(imageURI)
                     analyseDone = true
                 }
                 catch (e: Exception){
@@ -186,25 +189,18 @@ class Analyse_Activity : AppCompatActivity() {
             //Add button onClickListener
             button.setOnClickListener(View.OnClickListener {
                 //Add face option buttons
+                var currentFace = faces.valueAt(i)
                 if(!buttonFeatureIsActive) //if no button activate
                 {
-                    faceFeatureButton = displayFacialFeatureButtons(button)
+
+                    faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
                     buttonFeatureIsActive = true
                 }
                 else //Remove other regeneration button
                 {
                     val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
                     dynamicButtonsLayout.removeView(faceFeatureButton)
-                    faceFeatureButton = displayFacialFeatureButtons(button)
-                }
-
-                faceFeatureButton.setOnClickListener()
-                {
-                    var currentFace = faces[i]
-
-                    if (currentFace != null) {
-                            facialReconstruction(currentFace, tempBitmap)
-                    }
+                    faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
                 }
             })
         }
@@ -213,7 +209,7 @@ class Analyse_Activity : AppCompatActivity() {
         analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
     }
 
-    private fun displayFacialFeatureButtons(parentButton:Button) : Button
+    private fun displayFacialFeatureButtons(parentButton:Button, face:Face) : Button
     {
         val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
         val buttonFacialFeature = Button(this)
@@ -228,7 +224,13 @@ class Analyse_Activity : AppCompatActivity() {
         // add Button to layout
         dynamicButtonsLayout.addView(buttonFacialFeature)
 
+        buttonFacialFeature.setOnClickListener()
+        {
+            facialReconstruction(face, analyse_image_view.drawable.toBitmap())
+        }
+
         buttonFeatureIsActive = true
+
 
         return buttonFacialFeature
     }
@@ -237,16 +239,17 @@ class Analyse_Activity : AppCompatActivity() {
     private fun computeFace(faceToReplaceX:Int, faceToReplaceY:Int, faceToReplaceHeight:Int, faceToReplaceWidth:Int, currentBitmap:Bitmap, newFace:Bitmap):Bitmap{
 
         // Need to resize newBitmap to faceToReplace dimensions !!
-        var newFaceResized = createScaledBitmap(newFace , faceToReplaceWidth , faceToReplaceHeight, true)
+        val newFaceResized = createScaledBitmap(newFace , faceToReplaceWidth , faceToReplaceHeight, true)
+        val modifiedBitmap = createBitmap(currentBitmap)
 
         // Copy selected face into a bitmap
         for(x in 0 until newFaceResized.width){
             for(y in 0 until newFaceResized.height){
                 val pix = newFaceResized.getPixel(x, y)
-                currentBitmap.setPixel(x + faceToReplaceX,y + faceToReplaceY, pix)
+                modifiedBitmap.setPixel(x + faceToReplaceX,y + faceToReplaceY, pix)
             }
         }
-        return currentBitmap
+        return modifiedBitmap
     }
 
     // TODO : prendre un visage et non un carré noir
@@ -254,7 +257,7 @@ class Analyse_Activity : AppCompatActivity() {
     {
         Toast.makeText(this, "Face reconstruction", Toast.LENGTH_SHORT).show()
 
-        var newFace = createBitmap(currentBitmap.width, currentBitmap.height, Bitmap.Config.RGB_565)
+        var newFace = Bitmap.createBitmap(currentBitmap.width, currentBitmap.height, Bitmap.Config.RGB_565)
 
         var modifiedBitmap = computeFace(currentFace.position.x.toInt(), currentFace.position.y.toInt(), currentFace.height.toInt(), currentFace.width.toInt(), currentBitmap, newFace) // Need face to copy
         analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
