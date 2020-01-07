@@ -56,7 +56,7 @@ class AnalyseActivity : AppCompatActivity() {
                         e.printStackTrace()
                         throw e
                     } finally {
-                        
+
                     }
                 }
             }
@@ -204,28 +204,26 @@ class AnalyseActivity : AppCompatActivity() {
         //Set listener for every buttons created
         var faceFeatureButton = Button(this)
 
-        handler.post {
-            for (i in 0 until listOfButtons.size) {
-                var button = listOfButtons[i]
+        for (i in 0 until listOfButtons.size) {
+            var button = listOfButtons[i]
 
-                //Add button onClickListener
-                button.setOnClickListener(View.OnClickListener {
-                    //Add face option buttons
-                    var currentFace = faces.valueAt(i)
-                    if (!buttonFeatureIsActive) //if no button activate
-                    {
+            //Add button onClickListener
+            button.setOnClickListener(View.OnClickListener {
+                //Add face option buttons
+                var currentFace = faces.valueAt(i)
+                if (!buttonFeatureIsActive) //if no button activate
+                {
 
-                        faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
-                        buttonFeatureIsActive = true
-                    } else //Remove other regeneration button
-                    {
-                        val dynamicButtonsLayout =
-                            findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
-                        dynamicButtonsLayout.removeView(faceFeatureButton)
-                        faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
-                    }
-                })
-            }
+                    faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
+                    buttonFeatureIsActive = true
+                } else //Remove other regeneration button
+                {
+                    val dynamicButtonsLayout =
+                        findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
+                    dynamicButtonsLayout.removeView(faceFeatureButton)
+                    faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
+                }
+            })
         }
 
         toastOnMainThread("$faceNumberDetected face(s) detected\"")
@@ -247,7 +245,10 @@ class AnalyseActivity : AppCompatActivity() {
         buttonFacialFeature.setLines(1)
 
         // add Button to layout
-        dynamicButtonsLayout.addView(buttonFacialFeature)
+        val handler = Handler(Looper.getMainLooper())
+        handler.post {
+            dynamicButtonsLayout.addView(buttonFacialFeature)
+        }
 
         buttonFacialFeature.setOnClickListener()
         {
@@ -255,8 +256,6 @@ class AnalyseActivity : AppCompatActivity() {
         }
 
         buttonFeatureIsActive = true
-
-
         return buttonFacialFeature
     }
 
