@@ -16,6 +16,8 @@ import com.google.android.gms.vision.face.FaceDetector
 import android.widget.Toast
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
@@ -28,9 +30,6 @@ import androidx.core.graphics.createBitmap
 
 class AnalyseActivity : AppCompatActivity() {
 
-    private val PERMISSION_CODE = 1000
-    private val IMAGE_CAPTURE_CODE = 1001
-    var imageURI: Uri? = null
     //Indicate if a button feature is already active on the image
     var buttonFeatureIsActive = false
 
@@ -40,56 +39,47 @@ class AnalyseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_analyse)
-        imageURI = Uri.parse(intent.getStringExtra("imageUri"))
+        var imageURI = intent.getStringExtra("imageUri")
         Log.d("INFO", "message : $imageURI")
-        analyse_image_view.setImageURI(imageURI)
+        analyse_image_view.setImageURI(Uri.parse(imageURI))
 
-        go_back_btn.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java).apply {}
+        val imageUri: String = intent.getStringExtra("imageUri")
 
-            startActivity(intent)
-        }
-
-        analyse_btn.setOnClickListener {
-            val imageURI: String = intent.getStringExtra("imageUri")
-
-            if (!analyseDone) {
-
-                try {
-                    analyseImage(imageURI)
-                    analyseDone = true
+        val analyseThread = object : Thread() {
+                override fun run() {
+                    try {
+                        super.run()
+                        analyseImage(imageUri)
+                        analyseDone = true
+                    } catch (e: Exception) {
+                        Log.d("ERROR", "Error in analyse thread execution")
+                        e.printStackTrace()
+                        throw e
+                    } finally {
+                        
+                    }
                 }
-                catch (e: Exception){
-                    Log.d("ERROR", "Error : " + e.message + "\n" + e.cause)
-                    Toast.makeText(this, "Error :  " + e.message, Toast.LENGTH_SHORT).show()
-                }
+            }
 
+            go_back_btn.setOnClickListener {
+                val intent = Intent(this, MainActivity::class.java).apply {}
+                startActivity(intent)
+            }
+
+            analyse_btn.setOnClickListener {
+                if (!analyseDone) {
+                    analyseThread.start()
+                }
             }
         }
 
-        val AnalyseThread = object : Thread() {
+        private fun toastOnMainThread(message : String) {
 
-            override fun run() {
-
-                try {
-                    super.run()
-
-                    sleep(1000)
-                } catch (e: Exception) {
-                    Log.d("ERROR", "ehshshshhqhshssh")
-                    e.printStackTrace()
-                    throw e
-                } finally {
-                    // If everything is okay, go automatically to the main screen
-                    sleep(5000)
-
-                    finish()
-                }
+            val handler = Handler(Looper.getMainLooper())
+            handler.post {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-
 
     fun getDipFromPixels(px: Float): Float {
         return TypedValue.applyDimension(
@@ -101,6 +91,9 @@ class AnalyseActivity : AppCompatActivity() {
 
     private fun analyseImage(imageUri:String)
     {
+        // Handler to execute UI code on the UI thread (main thread)
+        val handler = Handler(Looper.getMainLooper())
+
         //Image needs to be obtained with mutable option
         val options = BitmapFactory.Options()
         options.inMutable=true
@@ -122,7 +115,9 @@ class AnalyseActivity : AppCompatActivity() {
         //Temp bitmap and canvas to draw on
         val tempBitmap = Bitmap.createBitmap(bitmapToAnalyse.width, bitmapToAnalyse.height, Bitmap.Config.RGB_565)
         val tempCanvas = Canvas(tempBitmap)
-        tempCanvas.drawBitmap(bitmapToAnalyse, 0.0f, 0.0f, null)
+        handler.post {
+            tempCanvas.drawBitmap(bitmapToAnalyse, 0.0f, 0.0f, null)
+        }
 
         //Face detector
         val faceDetector = FaceDetector.Builder(applicationContext)
@@ -155,7 +150,9 @@ class AnalyseActivity : AppCompatActivity() {
             val y1 = thisFace.position.y
             val x2 = x1 + thisFace.width
             val y2 = y1 + thisFace.height
-            tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 10f, 10f, rectPaint)
+            handler.post {
+                tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 10f, 10f, rectPaint)
+            }
 
             //Create button dynamically to be able to click on someone's face
             val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
@@ -185,7 +182,9 @@ class AnalyseActivity : AppCompatActivity() {
             buttonDynamicFace.alpha = 0.1f //transparency
 
             // add Button to layout and to the list
-            dynamicButtonsLayout.addView(buttonDynamicFace)
+            handler.post {
+                dynamicButtonsLayout.addView(buttonDynamicFace)
+            }
             listOfButtons.add(buttonDynamicFace)
 
             // add values (x, y, width and height) to a list for later use
@@ -193,41 +192,46 @@ class AnalyseActivity : AppCompatActivity() {
             listOffFaceValues.add(tempList)
 
             //Add landmark on eyes, mouth, etc...
-            for (landmark in thisFace.landmarks) {
-                val cx = (landmark.position.x * scale)
-                val cy = (landmark.position.y * scale)
-                tempCanvas.drawCircle(cx, cy, getDipFromPixels(3.0f), circlePaint)
+            handler.post {
+                for (landmark in thisFace.landmarks) {
+                    val cx = (landmark.position.x * scale)
+                    val cy = (landmark.position.y * scale)
+                    tempCanvas.drawCircle(cx, cy, getDipFromPixels(3.0f), circlePaint)
+                }
             }
         }
 
         //Set listener for every buttons created
         var faceFeatureButton = Button(this)
 
-        for(i in 0 until listOfButtons.size)
-        {
-            var button = listOfButtons[i]
+        handler.post {
+            for (i in 0 until listOfButtons.size) {
+                var button = listOfButtons[i]
 
-            //Add button onClickListener
-            button.setOnClickListener(View.OnClickListener {
-                //Add face option buttons
-                var currentFace = faces.valueAt(i)
-                if(!buttonFeatureIsActive) //if no button activate
-                {
+                //Add button onClickListener
+                button.setOnClickListener(View.OnClickListener {
+                    //Add face option buttons
+                    var currentFace = faces.valueAt(i)
+                    if (!buttonFeatureIsActive) //if no button activate
+                    {
 
-                    faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
-                    buttonFeatureIsActive = true
-                }
-                else //Remove other regeneration button
-                {
-                    val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
-                    dynamicButtonsLayout.removeView(faceFeatureButton)
-                    faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
-                }
-            })
+                        faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
+                        buttonFeatureIsActive = true
+                    } else //Remove other regeneration button
+                    {
+                        val dynamicButtonsLayout =
+                            findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
+                        dynamicButtonsLayout.removeView(faceFeatureButton)
+                        faceFeatureButton = displayFacialFeatureButtons(button, currentFace)
+                    }
+                })
+            }
         }
 
-        Toast.makeText(this, "$faceNumberDetected face(s) detected", Toast.LENGTH_SHORT).show()
-        analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
+        toastOnMainThread("$faceNumberDetected face(s) detected\"")
+        handler.post {
+            analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
+        }
     }
 
     private fun displayFacialFeatureButtons(parentButton:Button, face:Face) : Button
