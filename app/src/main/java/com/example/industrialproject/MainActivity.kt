@@ -20,11 +20,14 @@ import android.os.Environment.DIRECTORY_PICTURES
 import android.os.Environment.getExternalStoragePublicDirectory
 import android.view.WindowManager
 import java.io.FileOutputStream
+import kotlin.system.exitProcess
+import android.opengl.GLSurfaceView
 import androidx.core.app.ComponentActivity
 import androidx.core.app.ComponentActivity.ExtraData
 import androidx.core.content.ContextCompat.getSystemService
 import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import kotlin.system.exitProcess
+
+
 
 
 class MainActivity : AppCompatActivity()
@@ -32,8 +35,8 @@ class MainActivity : AppCompatActivity()
     private val PERMISSION_CODE = 1000
     private val IMAGE_CAPTURE_CODE = 1001
     var image_uri: Uri? = null
-    var isGalleryChoosen= false
-    var isCameraChoosen = false
+    var isGallery = false
+    var isCamera = false
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -147,32 +150,41 @@ class MainActivity : AppCompatActivity()
 
     private fun openCamera()
     {
+        isCamera = true
 
-        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
-            // Ensure that there's a camera activity to handle the intent
-            takePictureIntent.resolveActivity(packageManager)?.also {
-                // Create the File where the photo should go
-                val photoFile: File? = try {
-                    createImageFile()
-                } catch (ex: IOException) {
-                    // Error occurred while creating the File
-                    Log.d("ERROR", "Error, can't create the image file")
-                    null
-                }
-                // Continue only if the File was successfully created
-                photoFile?.also {
-                    val photoURI: Uri = FileProvider.getUriForFile(
-                        this,
-                        BuildConfig.APPLICATION_ID + ".provider",
-                        it
-                    )
+        try{
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+                // Ensure that there's a camera activity to handle the intent
+                takePictureIntent.resolveActivity(packageManager)?.also {
+                    // Create the File where the photo should go
+                    val photoFile: File? = try {
+                        createImageFile()
+                    } catch (ex: IOException) {
+                        // Error occurred while creating the File
+                        Log.d("ERROR", "Error, can't create the image file")
+                        ex.printStackTrace()
+                        null
+                    }
+                    // Continue only if the File was successfully created
+                    photoFile?.also {
+                        val photoURI: Uri = FileProvider.getUriForFile(
+                            this,
+                            BuildConfig.APPLICATION_ID + ".provider",
+                            it
+                        )
 
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
-                    image_uri = photoURI
-                    isCameraChoosen = true
-                    startActivityForResult(takePictureIntent, IMAGE_CAPTURE_CODE)
+                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                        image_uri = photoURI
+
+                        startActivityForResult(takePictureIntent, IMAGE_CAPTURE_CODE)
+                    }
                 }
             }
+        }catch(e: Exception){
+            Log.d("ERROR" , "Error in openCamera")
+            e.printStackTrace()
+            isCamera = false
+            throw e
         }
 
     }
@@ -180,9 +192,9 @@ class MainActivity : AppCompatActivity()
     private fun pickImageFromGallery()
     {
         //Intent to pick image
+        isGallery = true
         val imageIntent = Intent(Intent.ACTION_GET_CONTENT)
         imageIntent.type = "image/*"
-        isGalleryChoosen = true
         image_uri = null
         startActivityForResult(imageIntent, IMAGE_PICK_CODE)
     }
@@ -219,29 +231,40 @@ class MainActivity : AppCompatActivity()
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?)
     {
         super.onActivityResult(requestCode, resultCode, data)
+        Log.d("DEBUG", "ActivityResult detected")
         //called when image was captured from camera intent
-        if (resultCode == Activity.RESULT_OK && data != null){
-
-            var true_imag_uri = ""
-            if(isGalleryChoosen){
-                true_imag_uri = (data.data.toString())
-                isGalleryChoosen = false
+        if (resultCode == Activity.RESULT_OK){
+            var trueImagUri = ""
+            if(isGallery && data != null){
+                trueImagUri = (data.data.toString())
+                if (trueImagUri == "" || trueImagUri == null){
+                    Log.d("ERROR", "Gallery action didn't return any image")
+                }
+                isGallery = false
                 Log.d("DEBUG", "Gallery action finished and processed")
-            }else if(isCameraChoosen){
-                true_imag_uri = image_uri.toString()
-                isCameraChoosen = false
-                val bitmap_temp = MediaStore.Images.Media.getBitmap(this.contentResolver, image_uri);
-                saveImageToExternalStorage(bitmap_temp)
+                Log.d("DEBUG", "TrueImageUri = $trueImagUri")
+            }else if(isCamera){
+                trueImagUri = image_uri.toString()
+                if (trueImagUri == "" || trueImagUri == null){
+                    Log.d("ERROR", "Camera action didn't return any image")
+                }
+                isCamera = false
+                val bitmapTemp = MediaStore.Images.Media.getBitmap(this.contentResolver, image_uri);
+                saveImageToExternalStorage(bitmapTemp)
                 Log.d("DEBUG", "Camera action finished and processed")
-            }else {
+                Log.d("DEBUG", "TrueImageUri = $trueImagUri")
+            }else{
                 Log.d("DEBUG", "Error, action finished but no action code activated")
             }
+
             val intent = Intent(this, Analyse_Activity::class.java).apply {}
-            Log.d("DEBUG", "Image URI is : $true_imag_uri")
-            intent.putExtra("imageUri", true_imag_uri)
+            Log.d("DEBUG", "Image URI is : $trueImagUri")
+            intent.putExtra("imageUri", trueImagUri)
             startActivity(intent)
         } else if (resultCode == Activity.RESULT_CANCELED) {
             Log.d("DEBUG", "Action cancelled")
+        } else {
+            Log.d("ERROR", "ResultCode not recognized. ResultCode is $resultCode")
         }
 
     }
