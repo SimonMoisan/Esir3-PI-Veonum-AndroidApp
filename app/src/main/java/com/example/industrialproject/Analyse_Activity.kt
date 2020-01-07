@@ -3,6 +3,7 @@ package com.example.industrialproject
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.*
+import android.graphics.Bitmap.createScaledBitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import kotlinx.android.synthetic.main.activity_analyse.*
@@ -20,6 +21,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
 import android.view.WindowManager
+import androidx.core.graphics.createBitmap
 
 class Analyse_Activity : AppCompatActivity() {
 
@@ -174,11 +176,13 @@ class Analyse_Activity : AppCompatActivity() {
             }
         }
 
-
         //Set listener for every buttons created
         var faceFeatureButton = Button(this)
-        for(button in listOfButtons)
+
+        for(i in 0 until listOfButtons.size)
         {
+            var button = listOfButtons[i]
+
             //Add button onClickListener
             button.setOnClickListener(View.OnClickListener {
                 //Add face option buttons
@@ -196,13 +200,16 @@ class Analyse_Activity : AppCompatActivity() {
 
                 faceFeatureButton.setOnClickListener()
                 {
-                    facialReconstruction()
+                    var currentFace = faces[i]
+
+                    if (currentFace != null) {
+                            facialReconstruction(currentFace, tempBitmap)
+                    }
                 }
             })
         }
 
         Toast.makeText(this, "$faceNumberDetected face(s) detected", Toast.LENGTH_SHORT).show()
-
         analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
     }
 
@@ -226,24 +233,32 @@ class Analyse_Activity : AppCompatActivity() {
         return buttonFacialFeature
     }
 
-    private fun computeFace(posX:Int, posY:Int, faceHeight:Int, faceWidth:Int, currentBitmap:Bitmap):Bitmap{
+    // Copies newFace into currentBitmap's face at position X and Y, returns the complete bitmap with copied face
+    private fun computeFace(faceToReplaceX:Int, faceToReplaceY:Int, faceToReplaceHeight:Int, faceToReplaceWidth:Int, currentBitmap:Bitmap, newFace:Bitmap):Bitmap{
 
-        val res:Bitmap = Bitmap.createBitmap(faceWidth, faceHeight, Bitmap.Config.RGB_565)
+        // Need to resize newBitmap to faceToReplace dimensions !!
+        var newFaceResized = createScaledBitmap(newFace , faceToReplaceWidth , faceToReplaceHeight, true)
 
         // Copy selected face into a bitmap
-        for(x in 0 until faceWidth){
-            for(y in 0 until faceHeight){
-                val pix = currentBitmap.getPixel(x + posX, y + posY)
-                res.setPixel(x, y, pix)
+        for(x in 0 until newFaceResized.width){
+            for(y in 0 until newFaceResized.height){
+                val pix = newFaceResized.getPixel(x, y)
+                currentBitmap.setPixel(x + faceToReplaceX,y + faceToReplaceY, pix)
             }
         }
-        return res
+        return currentBitmap
     }
 
-
-    private fun facialReconstruction()
+    // TODO : prendre un visage et non un carré noir
+    private fun facialReconstruction(currentFace:Face, currentBitmap: Bitmap)
     {
         Toast.makeText(this, "Face reconstruction", Toast.LENGTH_SHORT).show()
+
+        var newFace = createBitmap(currentBitmap.width, currentBitmap.height, Bitmap.Config.RGB_565)
+
+        var modifiedBitmap = computeFace(currentFace.position.x.toInt(), currentFace.position.y.toInt(), currentFace.height.toInt(), currentFace.width.toInt(), currentBitmap, newFace) // Need face to copy
+        analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
+           // file:///android_res/drawable/
     }
 
 }
