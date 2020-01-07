@@ -15,6 +15,12 @@ import kotlin.system.exitProcess
 import android.os.Looper
 import android.os.Handler
 import android.webkit.WebView
+import androidx.core.app.ComponentActivity
+import androidx.core.app.ComponentActivity.ExtraData
+import androidx.core.content.ContextCompat.getSystemService
+import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+
+
 
 
 class PrerequisiteActivity : AppCompatActivity() {
@@ -37,11 +43,12 @@ class PrerequisiteActivity : AppCompatActivity() {
                 try {
                     super.run()
                     testsPrerequisites()
+                    sleep(1000)
                 } catch (e: Exception) {
-
+                    throw e
                 } finally {
                     // If everything is okay, go automatically to the main screen
-                    Thread.sleep(5000)
+                    sleep(5000)
                     startActivityFromMainThread()
                     finish()
                 }
@@ -49,14 +56,6 @@ class PrerequisiteActivity : AppCompatActivity() {
         }
 
         loadingThread.start()
-
-
-
-
-
-
-
-
     }
 
     fun startActivityFromMainThread() {
@@ -68,28 +67,44 @@ class PrerequisiteActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateText(s: String, t: TextView){
+        runOnUiThread {
+            t.text = s
+        }
+    }
+
     private fun testsPrerequisites() {
         val t = findViewById<TextView>(R.id.text_view_prerequisite_details)
 
         // Test Google vision libs
+
         if(!testsGooglePrerequisites(t)){
+
             //If we can't use Google Vision libs
+            updateText("Google Vision librairies not found !", t)
+            Thread.sleep(1000)
 
             // Test Google Play
 
             if(!testsGooglePlayVersion(t)){
 
                 //If not success reaching for Google Play Services
+                updateText("Error Google Play Service unreacheable", t)
+                Thread.sleep(2000)
 
             }else{
 
                 //If success reaching for Google Play Services
+                updateText("Google Play Service reached, please install Google Vision manually", t)
+                Thread.sleep(2000)
 
             }
 
         }else{
 
             //If we can use Google Vision libs
+            updateText("Google Vision librairies found", t)
+            Thread.sleep(1000)
 
         }
 
@@ -101,8 +116,7 @@ class PrerequisiteActivity : AppCompatActivity() {
 
         //Wait for Face detector
 
-
-        t.text = "Testing Google Vision librairies ..."
+        updateText("Testing Google Vision librairies ...", t)
 
         val faceDetector = FaceDetector.Builder(applicationContext)
             .setTrackingEnabled(false)
@@ -111,25 +125,20 @@ class PrerequisiteActivity : AppCompatActivity() {
 
         var faceDetectorTimeoutCounter = 0
         while(!faceDetector.isOperational && faceDetectorTimeoutCounter < 11){
-            Thread.sleep(2000)
+           Thread.sleep(2000)
             faceDetectorTimeoutCounter += 1
-            t.text = "Testing Google Vision librairies $faceDetectorTimeoutCounter try"
+            updateText("Testing Google Vision try $faceDetectorTimeoutCounter", t)
         }
 
-        return if(!faceDetector.isOperational){
-            faceDetector.release()
-            t.text = "Google Vision librairies not found !"
-            false
-        }else {
-            faceDetector.release()
-            t.text = "Google Vision librairies found"
-            true
-        }
+        faceDetector.release()
+
+        return faceDetector.isOperational
+
     }
 
     private fun testsGooglePlayVersion(t: TextView): Boolean {
 
-        t.text = "Testing Google Play Service availibility"
+        updateText("Testing Google Play Service availibility", t)
         val result = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(applicationContext)
         return result == ConnectionResult.SUCCESS
 
