@@ -17,7 +17,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".Analyse_Activity"></activity>
+        <activity android:name=".AnalyseActivity"></activity>
         <activity android:name=".MainActivity"></activity>
         <activity android:name=".PrerequisiteActivity">
             <intent-filter>

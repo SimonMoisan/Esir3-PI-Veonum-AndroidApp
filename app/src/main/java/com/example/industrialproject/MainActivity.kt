@@ -21,13 +21,6 @@ import android.os.Environment.getExternalStoragePublicDirectory
 import android.view.WindowManager
 import java.io.FileOutputStream
 import kotlin.system.exitProcess
-import android.opengl.GLSurfaceView
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-
-
 
 
 class MainActivity : AppCompatActivity()
@@ -257,7 +250,7 @@ class MainActivity : AppCompatActivity()
                 Log.d("DEBUG", "Error, action finished but no action code activated")
             }
 
-            val intent = Intent(this, Analyse_Activity::class.java).apply {}
+            val intent = Intent(this, AnalyseActivity::class.java).apply {}
             Log.d("DEBUG", "Image URI is : $trueImagUri")
             intent.putExtra("imageUri", trueImagUri)
             startActivity(intent)

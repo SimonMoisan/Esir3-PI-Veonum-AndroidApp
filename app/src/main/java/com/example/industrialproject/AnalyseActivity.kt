@@ -26,7 +26,7 @@ import android.view.WindowManager
 import android.widget.ImageView
 import androidx.core.graphics.createBitmap
 
-class Analyse_Activity : AppCompatActivity() {
+class AnalyseActivity : AppCompatActivity() {
 
     private val PERMISSION_CODE = 1000
     private val IMAGE_CAPTURE_CODE = 1001
@@ -64,6 +64,27 @@ class Analyse_Activity : AppCompatActivity() {
                     Toast.makeText(this, "Error :  " + e.message, Toast.LENGTH_SHORT).show()
                 }
 
+            }
+        }
+
+        val AnalyseThread = object : Thread() {
+
+            override fun run() {
+
+                try {
+                    super.run()
+
+                    sleep(1000)
+                } catch (e: Exception) {
+                    Log.d("ERROR", "ehshshshhqhshssh")
+                    e.printStackTrace()
+                    throw e
+                } finally {
+                    // If everything is okay, go automatically to the main screen
+                    sleep(5000)
+
+                    finish()
+                }
             }
         }
     }
