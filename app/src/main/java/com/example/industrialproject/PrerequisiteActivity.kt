@@ -87,10 +87,15 @@ class PrerequisiteActivity : AppCompatActivity() {
             }else{
 
                 //If success reaching for Google Play Services
-                updateText("Google Play Service reached, please install Google Vision manually", t)
+                updateText("Google Play Service reached but Google Vision not found", t)
                 Thread.sleep(2000)
 
             }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                finishAffinity()
+            }
+            exitProcess(0)
 
         }else{
 
