@@ -133,7 +133,8 @@ class AnalyseActivity : AppCompatActivity() {
         // Create a frame from the bitmap and detect faces
         val frame = Frame.Builder().setBitmap(bitmapToAnalyse).build()
         val faces = faceDetector.detect(frame)
-
+        faceDetector.release()
+        
         // Display rectangle for every detected face
         var faceNumberDetected = 0
         val scale = 1.0f
@@ -226,7 +227,7 @@ class AnalyseActivity : AppCompatActivity() {
             })
         }
 
-        toastOnMainThread("$faceNumberDetected face(s) detected\"")
+        toastOnMainThread("$faceNumberDetected face(s) detected")
         handler.post {
             analyse_image_view.setImageDrawable(BitmapDrawable(resources, tempBitmap))
         }
@@ -266,13 +267,12 @@ class AnalyseActivity : AppCompatActivity() {
         val newFaceResized = createScaledBitmap(newFace , faceToReplaceWidth , faceToReplaceHeight, true)
         val modifiedBitmap = createBitmap(currentBitmap)
 
-        // Copy selected face into a bitmap
-        for(x in 0 until newFaceResized.width){
-            for(y in 0 until newFaceResized.height){
-                val pix = newFaceResized.getPixel(x, y)
-                modifiedBitmap.setPixel(x + faceToReplaceX,y + faceToReplaceY, pix)
-            }
-        }
+        val modifiedBitmapCanvas = Canvas(modifiedBitmap)
+        val paint = Paint()
+        paint.alpha = 255
+
+        modifiedBitmapCanvas.drawBitmap(newFaceResized, faceToReplaceX.toFloat(), faceToReplaceY.toFloat(), paint)
+
         return modifiedBitmap
     }
 
