@@ -11,7 +11,7 @@
         android:text="@string/prerequisite_initial_text"
         android:textSize="50sp" />
 
-    <WebView
+    <ImageView
         android:id="@+id/icon_view_prerequisite"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

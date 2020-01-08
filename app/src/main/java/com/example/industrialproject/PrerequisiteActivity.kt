@@ -1,8 +1,6 @@
 package com.example.industrialproject
 
 import android.content.Intent
-import android.graphics.Color
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -14,13 +12,9 @@ import com.google.android.gms.vision.face.FaceDetector
 import kotlin.system.exitProcess
 import android.os.Looper
 import android.os.Handler
-import android.webkit.WebView
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-
-
+import com.example.industrialproject.TensorModelManager
+import android.widget.ImageView
+import com.bumptech.glide.Glide
 
 
 class PrerequisiteActivity : AppCompatActivity() {
@@ -31,10 +25,8 @@ class PrerequisiteActivity : AppCompatActivity() {
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_prerequisite)
 
-        val web = findViewById<WebView>(R.id.icon_view_prerequisite)
-        web.setBackgroundColor(Color.TRANSPARENT)
-
-        web.loadUrl("file:///android_asset/htmls/loading_prerequisite.html")
+        val gifView = findViewById<ImageView>(R.id.icon_view_prerequisite)
+        Glide.with(this).asGif().load(R.raw.loading_open_source).into(gifView)
 
         val loadingThread = object : Thread() {
 
@@ -95,10 +87,15 @@ class PrerequisiteActivity : AppCompatActivity() {
             }else{
 
                 //If success reaching for Google Play Services
-                updateText("Google Play Service reached, please install Google Vision manually", t)
+                updateText("Google Play Service reached but Google Vision not found", t)
                 Thread.sleep(2000)
 
             }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                finishAffinity()
+            }
+            exitProcess(0)
 
         }else{
 
@@ -144,15 +141,15 @@ class PrerequisiteActivity : AppCompatActivity() {
 
     }
 
-    private fun loadingTensorFlow(t: TextView): Boolean {
-        return false
-    }
-
     override fun onBackPressed() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             finishAffinity()
         }
         exitProcess(0)
+    }
+
+    private fun initTensorFlowAndLoadModel() {
+
     }
 
 }
