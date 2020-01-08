@@ -27,6 +27,7 @@ import android.widget.FrameLayout
 import android.view.WindowManager
 import android.widget.ImageView
 import androidx.core.graphics.createBitmap
+import android.util.DisplayMetrics
 
 class AnalyseActivity : AppCompatActivity() {
 
@@ -239,7 +240,39 @@ class AnalyseActivity : AppCompatActivity() {
 
         val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
 
-        layout.setMargins(parentButton.right , parentButton.top,0,0)
+
+        //Check if the button is outside of the screen
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        var screenWidth = displayMetrics.widthPixels
+        var screenHeight = displayMetrics.heightPixels
+
+        val xOffset = 200
+        val yOffset = 100
+
+        if(parentButton.x + parentButton.width + xOffset > screenWidth)
+        {
+            layout.setMargins(parentButton.left - 60 , parentButton.top,0,0)
+        }
+        else if(parentButton.x + xOffset < 0)
+        {
+            layout.setMargins(parentButton.right , parentButton.top,0,0)
+        }
+        else if(parentButton.y + parentButton.height + yOffset > screenHeight)
+        {
+            layout.setMargins(parentButton.right , parentButton.bottom,0,0)
+        }
+        else if(parentButton.y < 0)
+        {
+            layout.setMargins(parentButton.right , parentButton.top,0,0)
+        }
+        else
+        {
+            layout.setMargins(parentButton.right , parentButton.top,0,0)
+        }
+
+
+
         buttonFacialFeature.text = "Regeneration"
         buttonFacialFeature.layoutParams = layout
         buttonFacialFeature.setLines(1)
