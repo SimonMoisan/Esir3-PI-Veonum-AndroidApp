@@ -34,11 +34,16 @@ class AnalyseActivity : AppCompatActivity() {
     //Indicate if a button feature is already active on the image
     var buttonFeatureIsActive = false
 
+    var viewDialog: AnalyseLoadingPopup? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         var analyseDone = false
 
         super.onCreate(savedInstanceState)
-        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
         setContentView(R.layout.activity_analyse)
         var imageURI = intent.getStringExtra("imageUri")
         Log.d("INFO", "message : $imageURI")
@@ -46,41 +51,44 @@ class AnalyseActivity : AppCompatActivity() {
 
         val imageUri: String = intent.getStringExtra("imageUri")
 
+
         val analyseThread = object : Thread() {
-                override fun run() {
-                    try {
-                        super.run()
-                        analyseImage(imageUri)
-                        analyseDone = true
-                    } catch (e: Exception) {
-                        Log.d("ERROR", "Error in analyse thread execution")
-                        e.printStackTrace()
-                        throw e
-                    } finally {
+            override fun run() {
+                try {
+                    super.run()
+                    analyseImage(imageUri)
+                    analyseDone = true
+                } catch (e: Exception) {
+                    Log.d("ERROR", "Error in analyse thread execution")
+                    e.printStackTrace()
+                    throw e
+                } finally {
 
-                    }
-                }
-            }
-
-            go_back_btn.setOnClickListener {
-                val intent = Intent(this, MainActivity::class.java).apply {}
-                startActivity(intent)
-            }
-
-            analyse_btn.setOnClickListener {
-                if (!analyseDone) {
-                    analyseThread.start()
                 }
             }
         }
 
-        private fun toastOnMainThread(message : String) {
+        go_back_btn.setOnClickListener {
+            val intent = Intent(this, MainActivity::class.java).apply {}
+            startActivity(intent)
+        }
 
-            val handler = Handler(Looper.getMainLooper())
-            handler.post {
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        analyse_btn.setOnClickListener {
+            if (!analyseDone) {
+                analyseThread.start()
             }
         }
+
+        viewDialog = AnalyseLoadingPopup(this)
+    }
+
+    private fun toastOnMainThread(message : String) {
+
+        val handler = Handler(Looper.getMainLooper())
+        handler.post {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     fun getDipFromPixels(px: Float): Float {
         return TypedValue.applyDimension(
@@ -133,8 +141,17 @@ class AnalyseActivity : AppCompatActivity() {
 
         // Create a frame from the bitmap and detect faces
         val frame = Frame.Builder().setBitmap(bitmapToAnalyse).build()
+
+        handler.post{
+            viewDialog!!.showDialog()
+        }
+
         val faces = faceDetector.detect(frame)
+
         faceDetector.release()
+        handler.post{
+            viewDialog!!.hideDialog()
+        }
         
         // Display rectangle for every detected face
         var faceNumberDetected = 0

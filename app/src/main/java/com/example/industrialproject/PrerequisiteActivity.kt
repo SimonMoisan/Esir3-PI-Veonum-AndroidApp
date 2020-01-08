@@ -15,6 +15,7 @@ import android.os.Handler
 import com.example.industrialproject.TensorModelManager
 import android.widget.ImageView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy.NONE
 
 
 class PrerequisiteActivity : AppCompatActivity() {
@@ -26,7 +27,7 @@ class PrerequisiteActivity : AppCompatActivity() {
         setContentView(R.layout.activity_prerequisite)
 
         val gifView = findViewById<ImageView>(R.id.icon_view_prerequisite)
-        Glide.with(this).asGif().load(R.raw.loading_open_source).into(gifView)
+        Glide.with(this).asGif().diskCacheStrategy(NONE).load(R.raw.loading_open_source).into(gifView)
 
         val loadingThread = object : Thread() {
 
@@ -40,7 +41,7 @@ class PrerequisiteActivity : AppCompatActivity() {
                     throw e
                 } finally {
                     // If everything is okay, go automatically to the main screen
-                    sleep(5000)
+                    sleep(2000)
                     startActivityFromMainThread()
                     finish()
                 }
@@ -56,6 +57,7 @@ class PrerequisiteActivity : AppCompatActivity() {
         handler.post {
             val intent = Intent(this@PrerequisiteActivity, MainActivity::class.java)
             startActivity(intent)
+            this.overridePendingTransition(0, 0);
         }
     }
 
