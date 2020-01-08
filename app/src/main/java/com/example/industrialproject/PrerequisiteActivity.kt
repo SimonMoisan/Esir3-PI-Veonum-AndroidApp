@@ -2,7 +2,6 @@ package com.example.industrialproject
 
 import android.content.Intent
 import android.graphics.Color
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -15,11 +14,7 @@ import kotlin.system.exitProcess
 import android.os.Looper
 import android.os.Handler
 import android.webkit.WebView
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-
+import com.example.industrialproject.TensorModelManager
 
 
 
@@ -144,8 +139,8 @@ class PrerequisiteActivity : AppCompatActivity() {
 
     }
 
-    private fun loadingTensorFlow(t: TextView): Boolean {
-        return false
+    private fun loadingTensorFlow() {
+
     }
 
     override fun onBackPressed() {
@@ -153,6 +148,10 @@ class PrerequisiteActivity : AppCompatActivity() {
             finishAffinity()
         }
         exitProcess(0)
+    }
+
+    private fun initTensorFlowAndLoadModel() {
+
     }
 
 }
