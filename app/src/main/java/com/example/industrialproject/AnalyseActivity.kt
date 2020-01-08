@@ -13,7 +13,6 @@ import android.util.Log
 import com.google.android.gms.vision.Frame
 import com.google.android.gms.vision.face.Face
 import com.google.android.gms.vision.face.FaceDetector
-import android.widget.Toast
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
 import android.os.Handler
@@ -22,12 +21,16 @@ import android.provider.MediaStore
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
 import android.view.View
-import android.widget.Button
-import android.widget.FrameLayout
 import android.view.WindowManager
-import android.widget.ImageView
 import androidx.core.graphics.createBitmap
 import android.util.DisplayMetrics
+import android.widget.*
+import androidx.core.app.ComponentActivity
+import androidx.core.app.ComponentActivity.ExtraData
+import androidx.core.content.ContextCompat.getSystemService
+import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+
+
 
 class AnalyseActivity : AppCompatActivity() {
 
@@ -254,10 +257,17 @@ class AnalyseActivity : AppCompatActivity() {
     private fun displayFacialFeatureButtons(parentButton:Button, face:Face) : Button
     {
         val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
+
         val buttonFacialFeature = Button(this)
 
-        val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
+        val bounds = Rect()
+        val textView = TextView(this)
+        val buttonText = "Regeneration"
+        textView.paint.getTextBounds(buttonText, 0, buttonText.length, bounds)
+        val textSizeW = bounds.width()
+        val textSizeH = bounds.height()
 
+        val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
 
         //Check if the button is outside of the screen
         val displayMetrics = DisplayMetrics()
@@ -265,33 +275,21 @@ class AnalyseActivity : AppCompatActivity() {
         var screenWidth = displayMetrics.widthPixels
         var screenHeight = displayMetrics.heightPixels
 
-        val xOffset = 200
-        val yOffset = 100
+        val xOffset = 20 + textSizeW
+        val yOffset = 20 + textSizeH
 
+        //TODO The others possibilities
         if(parentButton.x + parentButton.width + xOffset > screenWidth)
         {
-            layout.setMargins(parentButton.left - 60 , parentButton.top,0,0)
-        }
-        else if(parentButton.x + xOffset < 0)
-        {
-            layout.setMargins(parentButton.right , parentButton.top,0,0)
-        }
-        else if(parentButton.y + parentButton.height + yOffset > screenHeight)
-        {
-            layout.setMargins(parentButton.right , parentButton.bottom,0,0)
-        }
-        else if(parentButton.y < 0)
-        {
-            layout.setMargins(parentButton.right , parentButton.top,0,0)
+            layout.setMargins(parentButton.left - textSizeW - parentButton.width, parentButton.top,0,0)
         }
         else
         {
-            layout.setMargins(parentButton.right , parentButton.top,0,0)
+            layout.setMargins(parentButton.left, parentButton.top,0,0)
         }
 
 
-
-        buttonFacialFeature.text = "Regeneration"
+        buttonFacialFeature.text = buttonText
         buttonFacialFeature.layoutParams = layout
         buttonFacialFeature.setLines(1)
 
