@@ -1,7 +1,6 @@
 package com.example.industrialproject
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -13,9 +12,9 @@ import com.google.android.gms.vision.face.FaceDetector
 import kotlin.system.exitProcess
 import android.os.Looper
 import android.os.Handler
-import android.webkit.WebView
 import com.example.industrialproject.TensorModelManager
-
+import android.widget.ImageView
+import com.bumptech.glide.Glide
 
 
 class PrerequisiteActivity : AppCompatActivity() {
@@ -26,10 +25,8 @@ class PrerequisiteActivity : AppCompatActivity() {
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_prerequisite)
 
-        val web = findViewById<WebView>(R.id.icon_view_prerequisite)
-        web.setBackgroundColor(Color.TRANSPARENT)
-
-        web.loadUrl("file:///android_asset/htmls/loading_prerequisite.html")
+        val gifView = findViewById<ImageView>(R.id.icon_view_prerequisite)
+        Glide.with(this).asGif().load(R.raw.loading_open_source).into(gifView)
 
         val loadingThread = object : Thread() {
 
@@ -136,10 +133,6 @@ class PrerequisiteActivity : AppCompatActivity() {
         updateText("Testing Google Play Service availibility", t)
         val result = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(applicationContext)
         return result == ConnectionResult.SUCCESS
-
-    }
-
-    private fun loadingTensorFlow() {
 
     }
 
