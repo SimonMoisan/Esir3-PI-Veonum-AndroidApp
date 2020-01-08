@@ -15,9 +15,6 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         // Specifications for TensorFlow Lite
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
-        }
         aaptOptions {
             noCompress "tflite"
         }
