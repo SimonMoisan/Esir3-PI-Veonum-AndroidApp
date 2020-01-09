@@ -293,7 +293,7 @@ class AnalyseActivity : AppCompatActivity() {
 
         if(parentButton.x + textSizeW + parentButtonWidthPx + xOffset >= screenWidth &&
                 parentButton.x - textSizeW - parentButton.width <= 0){
-            
+
             val decal1 = textSizeW/2
             val decal2 = (parentButtonWidthPx / resources.displayMetrics.density) / 2
             val decal = decal1 - decal2
