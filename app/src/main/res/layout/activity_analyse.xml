@@ -19,7 +19,7 @@
     </ImageView>
 
 
-    <!--Button to open camera-->
+    <!--Button to go back to main activity-->
     <Button
         android:id="@+id/go_back_btn"
         android:layout_width="wrap_content"
@@ -33,6 +33,18 @@
         android:textColor="#ffffff"
         android:background="@drawable/buttonanalyse_pink"
         android:text="@string/go_back_en" />
+
+    <!--Button to save current picture-->
+    <Button
+        android:id="@+id/save_image_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/buttonanalyse_purple"
+        android:textColor="#ffffff"
+        android:text="@string/save" />
 
 
     <!--Button to start face detection-->

@@ -17,20 +17,12 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
-import androidx.core.graphics.createBitmap
-import android.util.DisplayMetrics
 import android.widget.*
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import android.view.Display
-
+import com.example.industrialproject.saveImageToExternalStorage
 
 class AnalyseActivity : AppCompatActivity() {
 
@@ -74,6 +66,10 @@ class AnalyseActivity : AppCompatActivity() {
         go_back_btn.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java).apply {}
             startActivity(intent)
+        }
+
+        save_image_btn.setOnClickListener {
+            saveImageToExternalStorage(analyse_image_view.drawable.toBitmap(), this)
         }
 
         analyse_btn.setOnClickListener {
