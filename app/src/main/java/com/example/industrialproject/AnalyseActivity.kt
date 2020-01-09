@@ -307,10 +307,13 @@ class AnalyseActivity : AppCompatActivity() {
             layout.setMargins(parentButton.left + parentButtonWidthPx, parentButton.top,0,0)
         }
 
+        //Load button look
         buttonFacialFeature.text = buttonText
+        buttonFacialFeature.setTextColor(Color.parseColor("#ffffff"))
         buttonFacialFeature.textSize = activityTextSize
         buttonFacialFeature.layoutParams = layout
         buttonFacialFeature.setLines(1)
+        buttonFacialFeature.setBackgroundResource(R.drawable.button_regeneration_blue);
 
         // add Button to layout
         val handler = Handler(Looper.getMainLooper())
