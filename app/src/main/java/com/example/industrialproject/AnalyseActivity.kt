@@ -181,12 +181,13 @@ class AnalyseActivity : AppCompatActivity() {
             val x2 = x1 + thisFace.width
             val y2 = y1 + thisFace.height
             handler.post {
-                tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 10f, 10f, rectPaint)
+                //tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 10f, 10f, rectPaint)
             }
 
             //Create button dynamically to be able to click on someone's face
             val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
             val buttonDynamicFace = Button(this)
+            buttonDynamicFace.setBackgroundResource(R.drawable.buttonanalyse_face)
 
             // setting layout_width and layout_height using layout parameters
             val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
@@ -209,7 +210,6 @@ class AnalyseActivity : AppCompatActivity() {
             layout.setMargins(dynamicLayoutX, dynamicLayoutY,0,0)
 
             buttonDynamicFace.layoutParams = layout
-            buttonDynamicFace.alpha = 0.1f //transparency
 
             // add Button to layout and to the list
             handler.post {
@@ -226,7 +226,7 @@ class AnalyseActivity : AppCompatActivity() {
                 for (landmark in thisFace.landmarks) {
                     val cx = (landmark.position.x * scale)
                     val cy = (landmark.position.y * scale)
-                    tempCanvas.drawCircle(cx, cy, getDipFromPixels(3.0f), circlePaint)
+                    //tempCanvas.drawCircle(cx, cy, getDipFromPixels(3.0f), circlePaint)
                 }
             }
         }
