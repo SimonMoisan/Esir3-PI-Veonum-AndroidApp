@@ -22,6 +22,7 @@ import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
+import androidx.core.view.setMargins
 import com.example.industrialproject.saveImageToExternalStorage
 
 class AnalyseActivity : AppCompatActivity() {
@@ -63,26 +64,37 @@ class AnalyseActivity : AppCompatActivity() {
             }
         }
 
+        // Set the touch listener on the "go back" button. Make the app return to the main activity when clicked
         go_back_btn.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java).apply {}
             startActivity(intent)
         }
 
+        // Set the touch listener on the "Save" button. Make the app save the current image in the device memory.
         save_image_btn.setOnClickListener {
-            saveImageToExternalStorage(analyse_image_view.drawable.toBitmap(), this)
+            try {
+                saveImageToExternalStorage(analyse_image_view.drawable.toBitmap(), this)
+                toastOnMainThread("New image saved")
+            } catch (e :Exception){
+                toastOnMainThread("Error saving image")
+            }
         }
 
+        // Set the touch listener on the "Analyse" button. Make the app launch the analysis of the image by the Google mobile Vision librairies
+        // Launched with another thread, to prevent freeze of the main (UI) thread, the analyse can take some time with big images.
         analyse_btn.setOnClickListener {
             if (!analyseDone) {
                 analyseThread.start()
             }
         }
 
+        // We initialize the object that stock the loading gif with the current context, for later use
         viewDialog = AnalyseLoadingPopup(this)
     }
 
+    //Function that permit threads different that the main (UI) thread to make toasts (simples text messages)
     private fun toastOnMainThread(message : String) {
-
+        // This handler force the threads to let the main thread execute the code inside the post()
         val handler = Handler(Looper.getMainLooper())
         handler.post {
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -259,9 +271,11 @@ class AnalyseActivity : AppCompatActivity() {
         val bounds = Rect()
         val textView = TextView(this)
         val buttonText = "Regeneration"
+
+        val activityTextSize = findViewById<Button>(R.id.go_back_btn).textSize / resources.displayMetrics.scaledDensity
+        textView.textSize = activityTextSize
         textView.paint.getTextBounds(buttonText, 0, buttonText.length, bounds)
         val textSizeW = bounds.width()
-        val textSizeH = bounds.height()
 
         val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
 
@@ -270,20 +284,31 @@ class AnalyseActivity : AppCompatActivity() {
         val size = Point()
         display.getSize(size)
         val screenWidth = size.x
-        val screenHeight = size.y
+        val parentButtonWidthPx = parentButton.width
+        val parentButtonHeightPx = parentButton.height
 
         val xOffset = 100
-        val yOffset = 100
 
         //TODO The others possibilities
-        if(parentButton.x + textSizeW + parentButton.width + xOffset >= screenWidth) {
+
+        if(parentButton.x + textSizeW + parentButtonWidthPx + xOffset >= screenWidth &&
+                parentButton.x - textSizeW - parentButton.width <= 0){
+            
+            val decal1 = textSizeW/2
+            val decal2 = (parentButtonWidthPx / resources.displayMetrics.density) / 2
+            val decal = decal1 - decal2
+
+            layout.setMargins(parentButton.left - decal.toInt(), parentButton.top + parentButtonHeightPx,0,0)
+        }
+        else if(parentButton.x + textSizeW + parentButtonWidthPx + xOffset >= screenWidth) {
             layout.setMargins(parentButton.left - textSizeW - parentButton.width, parentButton.top,0,0)
         }
         else {
-            layout.setMargins(parentButton.left + parentButton.width, parentButton.top,0,0)
+            layout.setMargins(parentButton.left + parentButtonWidthPx, parentButton.top,0,0)
         }
 
         buttonFacialFeature.text = buttonText
+        buttonFacialFeature.textSize = activityTextSize
         buttonFacialFeature.layoutParams = layout
         buttonFacialFeature.setLines(1)
 
