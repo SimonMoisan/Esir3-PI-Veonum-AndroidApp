@@ -29,7 +29,7 @@ import androidx.core.app.ComponentActivity
 import androidx.core.app.ComponentActivity.ExtraData
 import androidx.core.content.ContextCompat.getSystemService
 import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-
+import android.view.Display
 
 
 class AnalyseActivity : AppCompatActivity() {
@@ -270,24 +270,22 @@ class AnalyseActivity : AppCompatActivity() {
         val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
 
         //Check if the button is outside of the screen
-        val displayMetrics = DisplayMetrics()
-        windowManager.defaultDisplay.getMetrics(displayMetrics)
-        var screenWidth = displayMetrics.widthPixels
-        var screenHeight = displayMetrics.heightPixels
+        val display = windowManager.defaultDisplay
+        val size = Point()
+        display.getSize(size)
+        val screenWidth = size.x
+        val screenHeight = size.y
 
-        val xOffset = 20 + textSizeW
-        val yOffset = 20 + textSizeH
+        val xOffset = 100
+        val yOffset = 100
 
         //TODO The others possibilities
-        if(parentButton.x + parentButton.width + xOffset > screenWidth)
-        {
+        if(parentButton.x + textSizeW + parentButton.width + xOffset >= screenWidth) {
             layout.setMargins(parentButton.left - textSizeW - parentButton.width, parentButton.top,0,0)
         }
-        else
-        {
-            layout.setMargins(parentButton.left, parentButton.top,0,0)
+        else {
+            layout.setMargins(parentButton.left + parentButton.width, parentButton.top,0,0)
         }
-
 
         buttonFacialFeature.text = buttonText
         buttonFacialFeature.layoutParams = layout
