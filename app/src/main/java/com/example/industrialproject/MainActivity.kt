@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity()
 
     }
 
-
+    //TODO delete temp image file after save
     private fun openCamera()
     {
         isCamera = true
