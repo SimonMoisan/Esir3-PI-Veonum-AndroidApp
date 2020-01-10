@@ -41,7 +41,6 @@
         android:src="@drawable/no_picture_icon" />
 
     <Button
-
         android:id="@+id/capture_btn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -52,6 +51,7 @@
         android:layout_marginLeft="20dp"
         android:layout_marginBottom="20dp"
         android:background="@drawable/buttonselector_pink"
+        android:textColor="#ffffff"
         android:text="@string/capture_image_en" />
 
 
@@ -68,6 +68,8 @@
         android:layout_marginRight="20dp"
         android:layout_marginBottom="10dp"
         android:background="@drawable/buttonselector_blue"
+        android:textColor="#ffffff"
         android:text="@string/get_from_gallery_en" />
+
 
 </RelativeLayout>

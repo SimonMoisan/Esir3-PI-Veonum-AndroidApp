@@ -4,16 +4,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Analyse_Activity">
+    tools:context=".AnalyseActivity">
 
     <!--ImageView in which image will be set-->
     <ImageView
-        android:id="@+id/image_view_before_analyse"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitXY" />
+        android:id="@+id/analyse_image_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:layout_centerInParent="true">
+        <!--Layout to create buttons dynamically-->
 
-    <!--Button to open camera-->
+    </ImageView>
+
+
+    <!--Button to go back to main activity-->
     <Button
         android:id="@+id/go_back_btn"
         android:layout_width="wrap_content"
@@ -24,9 +30,26 @@
         android:layout_marginEnd="22dp"
         android:layout_marginRight="22dp"
         android:layout_marginBottom="20dp"
+        android:textColor="#ffffff"
+        android:textSize="16sp"
+        android:background="@drawable/buttonanalyse_pink"
         android:text="@string/go_back_en" />
 
-    <!--Button to get a picture from gallery-->
+    <!--Button to save current picture-->
+    <Button
+        android:id="@+id/save_image_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/buttonanalyse_purple"
+        android:textColor="#ffffff"
+        android:textSize="16sp"
+        android:text="@string/save" />
+
+
+    <!--Button to start face detection-->
     <Button
         android:id="@+id/analyse_btn"
         android:layout_width="wrap_content"
@@ -35,6 +58,18 @@
         android:layout_alignParentBottom="true"
         android:layout_marginLeft="22dp"
         android:layout_marginBottom="20dp"
+        android:background="@drawable/buttonanalyse_blue"
+        android:textColor="#ffffff"
+        android:textSize="16sp"
         android:text="@string/analyse_en" />
+
+    <FrameLayout
+        android:id="@+id/dynamic_buttons_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@+id/analyse_image_view"
+        app:layout_constraintLeft_toLeftOf="@+id/analyse_image_view"
+        android:orientation="horizontal">
+    </FrameLayout>
 
 </RelativeLayout>
