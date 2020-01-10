@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity()
         }
 
     }
-    
+
     private fun openCamera()
     {
         isCamera = true
@@ -223,6 +223,7 @@ class MainActivity : AppCompatActivity()
 
                 saveImageToExternalStorage(bitmapTemp, this)
 
+                // After saving the picture in the external memory, we need to delete the temporary picture taken.
                 try {
                     val file = File(trueImagUri)
                     file.delete()
