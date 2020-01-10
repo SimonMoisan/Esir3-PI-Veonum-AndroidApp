@@ -109,8 +109,7 @@ class MainActivity : AppCompatActivity()
         }
 
     }
-
-    //TODO delete temp image file after save
+    
     private fun openCamera()
     {
         isCamera = true
@@ -223,6 +222,15 @@ class MainActivity : AppCompatActivity()
                 }
 
                 saveImageToExternalStorage(bitmapTemp, this)
+
+                try {
+                    val file = File(trueImagUri)
+                    file.delete()
+                } catch(e : Exception){
+                    Log.d("ERROR", "Error deleting the temporary picture ! " + e.printStackTrace())
+                }
+
+
                 Log.d("DEBUG", "Camera action finished and processed")
                 Log.d("DEBUG", "TrueImageUri = $trueImagUri")
             }else{
