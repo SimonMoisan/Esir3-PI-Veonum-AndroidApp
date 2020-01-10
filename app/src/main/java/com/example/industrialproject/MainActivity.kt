@@ -14,17 +14,9 @@ import androidx.core.content.FileProvider
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.IOException
-import android.media.MediaScannerConnection
-import android.graphics.Bitmap
 import android.media.ExifInterface
-import android.os.Environment.DIRECTORY_PICTURES
-import android.os.Environment.getExternalStoragePublicDirectory
 import android.view.WindowManager
-import androidx.core.net.toUri
-import java.io.FileOutputStream
 import kotlin.system.exitProcess
-import com.example.industrialproject.saveImageToExternalStorage
-
 
 class MainActivity : AppCompatActivity()
 {

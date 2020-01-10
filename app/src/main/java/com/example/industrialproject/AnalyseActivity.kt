@@ -276,6 +276,7 @@ class AnalyseActivity : AppCompatActivity() {
         textView.textSize = activityTextSize
         textView.paint.getTextBounds(buttonText, 0, buttonText.length, bounds)
         val textSizeW = bounds.width()
+        val textSizeH = bounds.height()
 
         val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
 
@@ -309,11 +310,9 @@ class AnalyseActivity : AppCompatActivity() {
 
         //Load button look
         buttonFacialFeature.text = buttonText
-        buttonFacialFeature.setTextColor(Color.parseColor("#ffffff"))
         buttonFacialFeature.textSize = activityTextSize
         buttonFacialFeature.layoutParams = layout
         buttonFacialFeature.setLines(1)
-        buttonFacialFeature.setBackgroundResource(R.drawable.button_regeneration_blue);
 
         // add Button to layout
         val handler = Handler(Looper.getMainLooper())

@@ -12,8 +12,6 @@ import java.io.FileOutputStream
 
 fun saveImageToExternalStorage(finalBitmap: Bitmap, context : Context) {
 
-
-
     val root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString()
     val myDir = File(root + "/" + BuildConfig.APPLICATION_ID + "_pictures")
     myDir.mkdirs()
