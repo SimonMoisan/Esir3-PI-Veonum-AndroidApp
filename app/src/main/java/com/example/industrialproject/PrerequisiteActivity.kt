@@ -35,13 +35,13 @@ class PrerequisiteActivity : AppCompatActivity() {
 
                 try {
                     super.run()
-                    testsPrerequisites()
                     sleep(1000)
+                    testsPrerequisites()
                 } catch (e: Exception) {
                     throw e
                 } finally {
                     // If everything is okay, go automatically to the main screen
-                    sleep(2000)
+                    sleep(1000)
                     startActivityFromMainThread()
                     finish()
                 }

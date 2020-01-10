@@ -17,20 +17,13 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import androidx.core.graphics.drawable.toBitmap
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
-import androidx.core.graphics.createBitmap
-import android.util.DisplayMetrics
 import android.widget.*
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import android.view.Display
-
+import androidx.core.view.setMargins
+import com.example.industrialproject.saveImageToExternalStorage
 
 class AnalyseActivity : AppCompatActivity() {
 
@@ -71,22 +64,37 @@ class AnalyseActivity : AppCompatActivity() {
             }
         }
 
+        // Set the touch listener on the "go back" button. Make the app return to the main activity when clicked
         go_back_btn.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java).apply {}
             startActivity(intent)
         }
 
+        // Set the touch listener on the "Save" button. Make the app save the current image in the device memory.
+        save_image_btn.setOnClickListener {
+            try {
+                saveImageToExternalStorage(analyse_image_view.drawable.toBitmap(), this)
+                toastOnMainThread("New image saved")
+            } catch (e :Exception){
+                toastOnMainThread("Error saving image")
+            }
+        }
+
+        // Set the touch listener on the "Analyse" button. Make the app launch the analysis of the image by the Google mobile Vision librairies
+        // Launched with another thread, to prevent freeze of the main (UI) thread, the analyse can take some time with big images.
         analyse_btn.setOnClickListener {
             if (!analyseDone) {
                 analyseThread.start()
             }
         }
 
+        // We initialize the object that stock the loading gif with the current context, for later use
         viewDialog = AnalyseLoadingPopup(this)
     }
 
+    //Function that permit threads different that the main (UI) thread to make toasts (simples text messages)
     private fun toastOnMainThread(message : String) {
-
+        // This handler force the threads to let the main thread execute the code inside the post()
         val handler = Handler(Looper.getMainLooper())
         handler.post {
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -173,12 +181,13 @@ class AnalyseActivity : AppCompatActivity() {
             val x2 = x1 + thisFace.width
             val y2 = y1 + thisFace.height
             handler.post {
-                tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 10f, 10f, rectPaint)
+                //tempCanvas.drawRoundRect(RectF(x1, y1, x2, y2), 10f, 10f, rectPaint)
             }
 
             //Create button dynamically to be able to click on someone's face
             val dynamicButtonsLayout = findViewById<FrameLayout>(R.id.dynamic_buttons_layout)
             val buttonDynamicFace = Button(this)
+            buttonDynamicFace.setBackgroundResource(R.drawable.buttonanalyse_face)
 
             // setting layout_width and layout_height using layout parameters
             val layout = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
@@ -201,7 +210,6 @@ class AnalyseActivity : AppCompatActivity() {
             layout.setMargins(dynamicLayoutX, dynamicLayoutY,0,0)
 
             buttonDynamicFace.layoutParams = layout
-            buttonDynamicFace.alpha = 0.1f //transparency
 
             // add Button to layout and to the list
             handler.post {
@@ -218,7 +226,7 @@ class AnalyseActivity : AppCompatActivity() {
                 for (landmark in thisFace.landmarks) {
                     val cx = (landmark.position.x * scale)
                     val cy = (landmark.position.y * scale)
-                    tempCanvas.drawCircle(cx, cy, getDipFromPixels(3.0f), circlePaint)
+                    //tempCanvas.drawCircle(cx, cy, getDipFromPixels(3.0f), circlePaint)
                 }
             }
         }
@@ -263,6 +271,9 @@ class AnalyseActivity : AppCompatActivity() {
         val bounds = Rect()
         val textView = TextView(this)
         val buttonText = "Regeneration"
+
+        val activityTextSize = findViewById<Button>(R.id.go_back_btn).textSize / resources.displayMetrics.scaledDensity
+        textView.textSize = activityTextSize
         textView.paint.getTextBounds(buttonText, 0, buttonText.length, bounds)
         val textSizeW = bounds.width()
         val textSizeH = bounds.height()
@@ -274,20 +285,32 @@ class AnalyseActivity : AppCompatActivity() {
         val size = Point()
         display.getSize(size)
         val screenWidth = size.x
-        val screenHeight = size.y
+        val parentButtonWidthPx = parentButton.width
+        val parentButtonHeightPx = parentButton.height
 
         val xOffset = 100
-        val yOffset = 100
 
         //TODO The others possibilities
-        if(parentButton.x + textSizeW + parentButton.width + xOffset >= screenWidth) {
+
+        if(parentButton.x + textSizeW + parentButtonWidthPx + xOffset >= screenWidth &&
+                parentButton.x - textSizeW - parentButton.width <= 0){
+
+            val decal1 = textSizeW/2
+            val decal2 = (parentButtonWidthPx / resources.displayMetrics.density) / 2
+            val decal = decal1 - decal2
+
+            layout.setMargins(parentButton.left - decal.toInt(), parentButton.top + parentButtonHeightPx,0,0)
+        }
+        else if(parentButton.x + textSizeW + parentButtonWidthPx + xOffset >= screenWidth) {
             layout.setMargins(parentButton.left - textSizeW - parentButton.width, parentButton.top,0,0)
         }
         else {
-            layout.setMargins(parentButton.left + parentButton.width, parentButton.top,0,0)
+            layout.setMargins(parentButton.left + parentButtonWidthPx, parentButton.top,0,0)
         }
 
+        //Load button look
         buttonFacialFeature.text = buttonText
+        buttonFacialFeature.textSize = activityTextSize
         buttonFacialFeature.layoutParams = layout
         buttonFacialFeature.setLines(1)
 

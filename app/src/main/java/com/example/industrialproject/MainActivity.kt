@@ -14,14 +14,9 @@ import androidx.core.content.FileProvider
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.IOException
-import android.media.MediaScannerConnection
-import android.graphics.Bitmap
-import android.os.Environment.DIRECTORY_PICTURES
-import android.os.Environment.getExternalStoragePublicDirectory
+import android.media.ExifInterface
 import android.view.WindowManager
-import java.io.FileOutputStream
 import kotlin.system.exitProcess
-
 
 class MainActivity : AppCompatActivity()
 {
@@ -96,32 +91,7 @@ class MainActivity : AppCompatActivity()
 
     }
 
-    private fun saveImageToExternalStorage(finalBitmap: Bitmap) {
-        val root = getExternalStoragePublicDirectory(DIRECTORY_PICTURES).toString()
-        val myDir = File(root + "/" + BuildConfig.APPLICATION_ID + "_pictures")
-        myDir.mkdirs()
-        val tsLong = System.currentTimeMillis() / 1000
-        val timeStamp = tsLong.toString()
-        val fname = "Pic_$timeStamp.jpg"
-        val file = File(myDir, fname)
-        try {
-            val out = FileOutputStream(file)
-            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-            out.flush()
-            out.close()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        // Tell the media scanner about the new file so that it is
-        // immediately available to the user.
-        MediaScannerConnection.scanFile(
-            this, arrayOf(file.toString()), null
-        ) { path, uri ->
-            Log.i("ExternalStorage", "Scanned $path:")
-            Log.i("ExternalStorage", "-> uri=$uri")
-        }
 
-    }
 
     @Throws(IOException::class)
     private fun createImageFile(): File {
@@ -242,8 +212,17 @@ class MainActivity : AppCompatActivity()
                     Log.d("ERROR", "Camera action didn't return any image")
                 }
                 isCamera = false
-                val bitmapTemp = MediaStore.Images.Media.getBitmap(this.contentResolver, image_uri);
-                saveImageToExternalStorage(bitmapTemp)
+                var bitmapTemp = MediaStore.Images.Media.getBitmap(this.contentResolver, image_uri)
+
+                //Rotate Picture if exif code of the picture say it need to be rotated
+                val exif = ExifInterface(contentResolver.openInputStream(image_uri))
+                when {
+                    exif.getAttribute(ExifInterface.TAG_ORIENTATION) == "6" -> bitmapTemp=rotate(bitmapTemp, 90)
+                    exif.getAttribute(ExifInterface.TAG_ORIENTATION) == "8" -> bitmapTemp=rotate(bitmapTemp, 270)
+                    exif.getAttribute(ExifInterface.TAG_ORIENTATION) == "3" -> bitmapTemp=rotate(bitmapTemp, 180)
+                }
+
+                saveImageToExternalStorage(bitmapTemp, this)
                 Log.d("DEBUG", "Camera action finished and processed")
                 Log.d("DEBUG", "TrueImageUri = $trueImagUri")
             }else{
