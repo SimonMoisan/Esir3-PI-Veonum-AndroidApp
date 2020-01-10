@@ -83,6 +83,7 @@ class TensorModelManager {
         return getOutputImage(output.buffer)
     }
 
+    //TODO see the colors
     private fun getOutputImage(output: ByteBuffer): Bitmap {
         output.rewind()
 
@@ -95,6 +96,7 @@ class TensorModelManager {
             val g = output.float * 255.0f
             val b = output.float * 255.0f
 
+            //pixels[i] = a shl 24 or (r.toInt() shl 16) or (g.toInt() shl 8) or b.toInt()
             pixels[i] = a shl 24 or (r.toInt() shl 16) or (g.toInt() shl 8) or b.toInt()
         }
         bitmap.setPixels(pixels, 0, modelResultSizeWidth, 0, 0, modelResultSizeWidth, modelResultSizeHeight)
