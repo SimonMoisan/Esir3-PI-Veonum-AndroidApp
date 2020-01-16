@@ -12,13 +12,16 @@ import java.util.*
 import java.nio.ByteBuffer
 import java.io.*
 import java.nio.ByteOrder
+import android.R.attr.x
+
+
 
 class TensorModelManager {
 
     private var interpreter : Interpreter? = null
     private var gpuDelegate : GpuDelegate? = null
-    private val modelResultSizeWidth = 28
-    private val modelResultSizeHeight = 28
+    private var modelResultSizeWidth = 28
+    private var modelResultSizeHeight = 28
 
     // Function that load a tensorFlow lite model(.tflite) with a path to this model and create a interpreter wth it
     fun loadModelFromPath(context : Context, fileName : String){
@@ -46,9 +49,24 @@ class TensorModelManager {
         }
     }
 
+    // Setter of the width of the returned image. Have to be adjusted manually in function of the model ouput
+    fun bitmapWidth(newWidth : Int) {
+        if (newWidth > 0){
+            modelResultSizeWidth = newWidth
+        }
+    }
+
+    // Setter of the height of the returned image. Have to be adjusted manually in function of the model ouput
+    fun bitmapHeight(newHeight : Int) {
+        if (newHeight > 0){
+            modelResultSizeHeight = newHeight
+        }
+    }
+
     // This function try to create a GPU manager for the interpreter. Return true if it was succeful and false if he fail.
     private fun tryGPU() : Boolean {
 
+        return false
         var isGpuUsable = false
         try {
             gpuDelegate = GpuDelegate()
@@ -80,7 +98,9 @@ class TensorModelManager {
         val output = TensorBuffer.createFixedSize(intArrayOf(1,28,28,3),DataType.FLOAT32)
         interpreter?.run(input.buffer, output.buffer)
 
-        return getOutputImage(output.buffer)
+        val resRaw = output.buffer
+
+        return getOutputImage(resRaw)
     }
 
     //TODO see the colors
@@ -92,9 +112,13 @@ class TensorModelManager {
         for (i in 0 until modelResultSizeWidth * modelResultSizeHeight) {
             val a = 0xFF
 
-            val r = output.float * 255.0f
-            val g = output.float * 255.0f
-            val b = output.float * 255.0f
+            // In the result of our models, we have a float array with float between -1 and 1
+            // and we want to get value between 0 and 255
+            val r = ((output.float + 1) / 2) * 255.0f
+            val g = ((output.float + 1) / 2) * 255.0f
+            val b = ((output.float + 1) / 2) * 255.0f
+
+            Log.d("DEBUG", "value : $r $g $b")
 
             //pixels[i] = a shl 24 or (r.toInt() shl 16) or (g.toInt() shl 8) or b.toInt()
             pixels[i] = a shl 24 or (r.toInt() shl 16) or (g.toInt() shl 8) or b.toInt()
