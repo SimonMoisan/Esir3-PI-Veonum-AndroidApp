@@ -1,6 +1,7 @@
 package com.example.industrialproject
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -12,7 +13,6 @@ import com.google.android.gms.vision.face.FaceDetector
 import kotlin.system.exitProcess
 import android.os.Looper
 import android.os.Handler
-import com.example.industrialproject.TensorModelManager
 import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy.NONE
@@ -25,6 +25,7 @@ class PrerequisiteActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.activity_prerequisite)
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         val gifView = findViewById<ImageView>(R.id.icon_view_prerequisite)
         Glide.with(this).asGif().diskCacheStrategy(NONE).load(R.raw.loading_open_source).into(gifView)
