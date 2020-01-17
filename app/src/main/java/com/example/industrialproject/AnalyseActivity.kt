@@ -352,11 +352,17 @@ class AnalyseActivity : AppCompatActivity() {
     {
         Toast.makeText(this, "Face reconstruction", Toast.LENGTH_SHORT).show()
 
-        var newFace = Bitmap.createBitmap(currentBitmap.width, currentBitmap.height, Bitmap.Config.RGB_565)
+        val faceGenerator = TensorModelManager()
+        faceGenerator.loadModelDefault(this)
+        if (faceGenerator.isOperational()){
+            val newFace = createScaledBitmap(faceGenerator.generateFace(), currentFace.width.toInt(), currentFace.height.toInt(), true)
+            var modifiedBitmap = computeFace(currentFace.position.x.toInt(), currentFace.position.y.toInt(), currentFace.height.toInt(), currentFace.width.toInt(), currentBitmap, newFace) // Need face to copy
+            analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
+        }else{
+            Log.d("ERROR", "Error when creating the faceGenerator")
+        }
+        faceGenerator.close()
 
-        var modifiedBitmap = computeFace(currentFace.position.x.toInt(), currentFace.position.y.toInt(), currentFace.height.toInt(), currentFace.width.toInt(), currentBitmap, newFace) // Need face to copy
-        analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
-           // file:///android_res/drawable/
     }
 
 }

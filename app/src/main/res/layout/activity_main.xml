@@ -38,7 +38,7 @@
         android:layout_marginRight="70dp"
         android:layout_marginBottom="50dp"
         android:scaleType="fitCenter"
-        android:src="@drawable/no_picture_icon" />
+        android:src="@drawable/face_recognition_icon" />
 
     <Button
         android:id="@+id/capture_btn"

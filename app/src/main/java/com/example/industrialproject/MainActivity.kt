@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity()
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
 
         setContentView(R.layout.activity_main)
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         //Button get camera image
         capture_btn.setOnClickListener {
@@ -109,7 +111,6 @@ class MainActivity : AppCompatActivity()
         }
 
     }
-
 
     private fun openCamera()
     {
@@ -223,6 +224,16 @@ class MainActivity : AppCompatActivity()
                 }
 
                 saveImageToExternalStorage(bitmapTemp, this)
+
+                // After saving the picture in the external memory, we need to delete the temporary picture taken.
+                try {
+                    val file = File(trueImagUri)
+                    file.delete()
+                } catch(e : Exception){
+                    Log.d("ERROR", "Error deleting the temporary picture ! " + e.printStackTrace())
+                }
+
+
                 Log.d("DEBUG", "Camera action finished and processed")
                 Log.d("DEBUG", "TrueImageUri = $trueImagUri")
             }else{
