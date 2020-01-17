@@ -340,6 +340,8 @@ class AnalyseActivity : AppCompatActivity() {
         val paint = Paint()
         paint.alpha = 255
 
+        val mergedFace = createMergedFace(0.5f, newFaceResized, newFaceResized)
+
         modifiedBitmapCanvas.drawBitmap(newFaceResized, faceToReplaceX.toFloat(), faceToReplaceY.toFloat(), paint)
 
         return modifiedBitmap
