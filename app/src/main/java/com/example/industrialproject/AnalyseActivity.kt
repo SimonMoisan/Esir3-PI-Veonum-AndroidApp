@@ -37,6 +37,7 @@ class AnalyseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         var analyseDone = false
+        buttonFeatureIsActive = false
 
         super.onCreate(savedInstanceState)
         window.setFlags(
