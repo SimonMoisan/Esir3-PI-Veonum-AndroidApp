@@ -1,5 +1,6 @@
 package com.example.industrialproject
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.graphics.*
@@ -14,7 +15,6 @@ import com.google.android.gms.vision.Frame
 import com.google.android.gms.vision.face.Face
 import com.google.android.gms.vision.face.FaceDetector
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import androidx.core.graphics.drawable.toBitmap
@@ -22,8 +22,6 @@ import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
-import androidx.core.view.setMargins
-import com.example.industrialproject.saveImageToExternalStorage
 
 class AnalyseActivity : AppCompatActivity() {
 
@@ -32,8 +30,14 @@ class AnalyseActivity : AppCompatActivity() {
 
     var viewDialog: AnalyseLoadingPopup? = null
 
+    // Parameters for the generator Thread
+    private var currentFaceParam:Face?     = null
+    private var currentBitmapParam:Bitmap? = null
+    private var contextParam:Context? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         var analyseDone = false
+        buttonFeatureIsActive = false
 
         super.onCreate(savedInstanceState)
         window.setFlags(
@@ -46,7 +50,6 @@ class AnalyseActivity : AppCompatActivity() {
         analyse_image_view.setImageURI(Uri.parse(imageURI))
 
         val imageUri: String = intent.getStringExtra("imageUri")
-
 
         val analyseThread = object : Thread() {
             override fun run() {
@@ -153,12 +156,15 @@ class AnalyseActivity : AppCompatActivity() {
         // Create a frame from the bitmap and detect faces
         val frame = Frame.Builder().setBitmap(bitmapToAnalyse).build()
 
+        // This handler.post() force the main UI thread to execute the code inside.
+        // This code show the loading gif on top of the screen
         handler.post{
             viewDialog!!.showDialog()
         }
 
         val faces = faceDetector.detect(frame)
 
+        // This code destroy the loading gif on top of the screen
         faceDetector.release()
         handler.post{
             viewDialog!!.hideDialog()
@@ -322,7 +328,25 @@ class AnalyseActivity : AppCompatActivity() {
 
         buttonFacialFeature.setOnClickListener()
         {
-            facialReconstruction(face, analyse_image_view.drawable.toBitmap())
+            currentFaceParam = face
+            currentBitmapParam = analyse_image_view.drawable.toBitmap()
+            contextParam = this.applicationContext
+
+            val reconstructionThread = object : Thread() {
+                override fun run() {
+                    try {
+                        super.run()
+                        facialReconstruction(currentFaceParam!!, currentBitmapParam!!, contextParam!!)
+                    } catch (e: Exception) {
+                        Log.d("ERROR", "Error in generator thread execution")
+                        e.printStackTrace()
+                        throw e
+                    } finally {
+
+                    }
+                }
+            }
+            reconstructionThread.start()
         }
 
         buttonFeatureIsActive = true
@@ -347,21 +371,59 @@ class AnalyseActivity : AppCompatActivity() {
         return modifiedBitmap
     }
 
-    // TODO : prendre un visage et non un carré noir
-    private fun facialReconstruction(currentFace:Face, currentBitmap: Bitmap)
+    private fun facialReconstruction(currentFace:Face, currentBitmap: Bitmap, context: Context)
     {
-        Toast.makeText(this, "Face reconstruction", Toast.LENGTH_SHORT).show()
+        val handler = Handler(Looper.getMainLooper())
+        handler.post{
+            viewDialog!!.showDialog()
+        }
+        toastOnMainThread("Face reconstruction")
 
         val faceGenerator = TensorModelManager()
         faceGenerator.loadModelDefault(this)
         if (faceGenerator.isOperational()){
-            val newFace = createScaledBitmap(faceGenerator.generateFace(), currentFace.width.toInt(), currentFace.height.toInt(), true)
-            var modifiedBitmap = computeFace(currentFace.position.x.toInt(), currentFace.position.y.toInt(), currentFace.height.toInt(), currentFace.width.toInt(), currentBitmap, newFace) // Need face to copy
-            analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
+            var newFace = createScaledBitmap(faceGenerator.generateFace(), currentFace.width.toInt(), currentFace.height.toInt(), true)
+
+            // We detect the face in the generated picture to resize the generated face.
+            val faceDetector = FaceDetector.Builder(context)
+                  .setTrackingEnabled(false)
+                  .setLandmarkType(FaceDetector.ALL_LANDMARKS)
+                  .build()
+            if(!faceDetector!!.isOperational){
+                faceDetector!!.release()
+                throw ClassNotFoundException("FaceDetector can't work, check Google Play Service")
+            }
+            var frame = Frame.Builder().setBitmap(newFace).build()
+            var detectedGenerated = faceDetector!!.detect(frame)
+
+            // We create new face and reanalyse it to avoid generated face that aren't recognized by the face detector
+            while (detectedGenerated.size() != 1){
+                newFace = createScaledBitmap(faceGenerator.generateFace(), currentFace.width.toInt(), currentFace.height.toInt(), true)
+                frame = Frame.Builder().setBitmap(newFace).build()
+                detectedGenerated = faceDetector!!.detect(frame)
+            }
+            faceDetector!!.release()
+
+            // We get the face and compute its dimension and coordinates.
+            val generatedFace:Face = detectedGenerated.valueAt(0)
+            val newFaceTemp = Bitmap.createBitmap(newFace, generatedFace.position.x.toInt(), generatedFace.position.y.toInt(), generatedFace.width.toInt(), generatedFace.height.toInt())
+            // We get only the face in the generated picture, to have as little background as possible
+            newFace = createScaledBitmap(newFaceTemp, currentFace.width.toInt(), currentFace.height.toInt(), true)
+
+            handler.post{
+                var modifiedBitmap = computeFace(currentFace.position.x.toInt(), currentFace.position.y.toInt(), currentFace.height.toInt(), currentFace.width.toInt(), currentBitmap, newFace) // Need face to copy
+                analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
+            }
+
+
         }else{
             Log.d("ERROR", "Error when creating the faceGenerator")
         }
         faceGenerator.close()
+        handler.post{
+            viewDialog!!.hideDialog()
+        }
+
 
     }
 
