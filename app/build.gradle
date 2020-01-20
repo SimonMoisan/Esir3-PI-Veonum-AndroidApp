@@ -47,9 +47,9 @@ dependencies {
     //implementation "org.bytedeco:javacv:1.4.2"
     //implementation "org.bytedeco.javacpp-presets:opencv:3.4.1-1.4.1:android-arm"
 
-    implementation group: 'org.bytedeco', name: 'javacv', version: '1.4.3'
-    implementation group: 'org.bytedeco.javacpp-presets', name: 'opencv', version: '3.4.3-1.4.3', classifier: 'android-arm'
-    implementation group: 'org.bytedeco.javacpp-presets', name: 'opencv', version: '3.4.3-1.4.3', classifier: 'android-x86'
+    implementation group: 'org.bytedeco', name: 'javacv', version: '1.4.4'
+    implementation group: 'org.bytedeco.javacpp-presets', name: 'opencv', version: '4.0.1-1.4.4', classifier: 'android-arm'
+    implementation group: 'org.bytedeco.javacpp-presets', name: 'opencv', version: '4.0.1-1.4.4', classifier: 'android-x86'
 
     //Dependencies for TensorFlow Lite and TensorFlow Lite support modules
     //TODO Put real version numbers
