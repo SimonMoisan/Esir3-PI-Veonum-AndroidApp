@@ -353,20 +353,19 @@ class AnalyseActivity : AppCompatActivity() {
         return buttonFacialFeature
     }
 
-    // Copies newFace into currentBitmap's face at position X and Y, returns the complete bitmap with copied face
-    private fun computeFace(faceToReplaceX:Int, faceToReplaceY:Int, faceToReplaceHeight:Int, faceToReplaceWidth:Int, currentBitmap:Bitmap, newFace:Bitmap):Bitmap{
+    // Creates a merged version of currentFace and newFace, places the result in a copy of currentBitmap, and returns the copy
+    private fun computeFace(currentFaceBitmap: Bitmap, currentFace: Face, posX: Int, posY:Int, newGeneratedFace:Bitmap, newFace:Face, currentBitmap:Bitmap):Bitmap{
 
-        // Need to resize newBitmap to faceToReplace dimensions !!
-        val newFaceResized = createScaledBitmap(newFace , faceToReplaceWidth , faceToReplaceHeight, true)
+        // TODO : check if newFace and currentFace already have the same dimensions
+
         val modifiedBitmap = createBitmap(currentBitmap)
-
         val modifiedBitmapCanvas = Canvas(modifiedBitmap)
         val paint = Paint()
-        paint.alpha = 255
+        paint.alpha = 100
 
-        val mergedFace = createMergedFace(0.5f, newFaceResized, newFaceResized)
+        val mergedFace = createMergedFace(0.5f, currentFaceBitmap, currentFace, newGeneratedFace, newFace)
 
-        modifiedBitmapCanvas.drawBitmap(newFaceResized, faceToReplaceX.toFloat(), faceToReplaceY.toFloat(), paint)
+        modifiedBitmapCanvas.drawBitmap(newGeneratedFace, posX.toFloat(), posY.toFloat(), paint)
 
         return modifiedBitmap
     }
@@ -382,7 +381,7 @@ class AnalyseActivity : AppCompatActivity() {
         val faceGenerator = TensorModelManager()
         faceGenerator.loadModelDefault(this)
         if (faceGenerator.isOperational()){
-            var newFace = createScaledBitmap(faceGenerator.generateFace(), currentFace.width.toInt(), currentFace.height.toInt(), true)
+            var newGeneratedFace = createScaledBitmap(faceGenerator.generateFace(), currentFace.width.toInt(), currentFace.height.toInt(), true)
 
             // We detect the face in the generated picture to resize the generated face.
             val faceDetector = FaceDetector.Builder(context)
@@ -393,29 +392,42 @@ class AnalyseActivity : AppCompatActivity() {
                 faceDetector!!.release()
                 throw ClassNotFoundException("FaceDetector can't work, check Google Play Service")
             }
-            var frame = Frame.Builder().setBitmap(newFace).build()
+            var frame = Frame.Builder().setBitmap(newGeneratedFace).build()
             var detectedGenerated = faceDetector!!.detect(frame)
 
-            // We create new face and reanalyse it to avoid generated face that aren't recognized by the face detector
+            // We create new face and reanalyse it to avoid generated faces that aren't recognized by the face detector
             while (detectedGenerated.size() != 1){
-                newFace = createScaledBitmap(faceGenerator.generateFace(), currentFace.width.toInt(), currentFace.height.toInt(), true)
-                frame = Frame.Builder().setBitmap(newFace).build()
+                newGeneratedFace = createScaledBitmap(faceGenerator.generateFace(), currentFace.width.toInt(), currentFace.height.toInt(), true)
+                frame = Frame.Builder().setBitmap(newGeneratedFace).build()
                 detectedGenerated = faceDetector!!.detect(frame)
+                Log.d("ERROR", "Error, can't find a face in generated")
+            }
+            // Features of the generated face
+            val newDetectedFace:Face = detectedGenerated.valueAt(0)
+
+            // We get a crop of the current face
+            val currentFaceBitmap = Bitmap.createBitmap(currentBitmap, currentFace.position.x.toInt(), currentFace.position.y.toInt(), currentFace.width.toInt(), currentFace.height.toInt())
+            var currentFrame = Frame.Builder().setBitmap(currentFaceBitmap).build()
+            var detectedCurrent = faceDetector!!.detect(currentFrame)
+
+            // If no face is detected in the crop of the current face, we can't do the morphing
+            if (detectedCurrent.size() != 1){
+                Log.d("ERROR", "Error, can't find a face in currentFace")
+            }
+            else{
+                // Features of the cropped current face
+                val currentDetectedFace = detectedCurrent.valueAt(0)
+
+                // We need to remember the position of the original face in the current image
+                val posX = currentFace.position.x.toInt()
+                val posY = currentFace.position.y.toInt()
+
+                handler.post{
+                    var modifiedBitmap = computeFace(currentFaceBitmap, currentDetectedFace, posX, posY, newGeneratedFace, newDetectedFace, currentBitmap)
+                    analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
+                }
             }
             faceDetector!!.release()
-
-            // We get the face and compute its dimension and coordinates.
-            val generatedFace:Face = detectedGenerated.valueAt(0)
-            val newFaceTemp = Bitmap.createBitmap(newFace, generatedFace.position.x.toInt(), generatedFace.position.y.toInt(), generatedFace.width.toInt(), generatedFace.height.toInt())
-            // We get only the face in the generated picture, to have as little background as possible
-            newFace = createScaledBitmap(newFaceTemp, currentFace.width.toInt(), currentFace.height.toInt(), true)
-
-            handler.post{
-                var modifiedBitmap = computeFace(currentFace.position.x.toInt(), currentFace.position.y.toInt(), currentFace.height.toInt(), currentFace.width.toInt(), currentBitmap, newFace) // Need face to copy
-                analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
-            }
-
-
         }else{
             Log.d("ERROR", "Error when creating the faceGenerator")
         }

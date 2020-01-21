@@ -2,6 +2,7 @@ package com.example.industrialproject
 
 import android.graphics.Bitmap
 import android.util.Log
+import com.google.android.gms.vision.face.Face
 import org.bytedeco.javacpp.opencv_core
 import org.bytedeco.javacpp.opencv_core.CV_32F
 import org.bytedeco.javacv.AndroidFrameConverter
@@ -131,15 +132,15 @@ fun myMatToBitmap(srcMat: opencv_core.Mat):Bitmap{
 }
 
 // Merges two images together. The merging is controlled by alpha
-fun createMergedFace(alpha:Float, originalBitmap:Bitmap, generatedBitmap:Bitmap):Bitmap{
+fun createMergedFace(alpha:Float, currentFaceBitmap:Bitmap, currentFace: Face, newFaceBitmap:Bitmap, newFace:Face):Bitmap{
 
     //val originalMat = opencv_core.Mat.zeros(originalBitmap.height, originalBitmap.width, CV_32F)
-    val originalMat = myBitmapToMat(originalBitmap)
+    //val originalMat = myBitmapToMat(originalBitmap)
 
     //val generatedMat = opencv_core.Mat.zeros(originalBitmap.height, originalBitmap.width, CV_32F)
-    val generatedMat = myBitmapToMat(generatedBitmap)
+    //val generatedMat = myBitmapToMat(generatedBitmap)
 
-    val mergedMat:opencv_core.Mat = opencv_core.Mat.zeros(originalBitmap.height, originalBitmap.width, CV_32F).asMat()
+    val mergedMat:opencv_core.Mat = opencv_core.Mat.zeros(currentFaceBitmap.height, currentFaceBitmap.width, CV_32F).asMat()
 
     // Step 1 : detect features in both faces
 
