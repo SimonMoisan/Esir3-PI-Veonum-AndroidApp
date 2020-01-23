@@ -20,8 +20,8 @@ class TensorModelManager {
 
     private var interpreter : Interpreter? = null
     private var gpuDelegate : GpuDelegate? = null
-    private var modelResultSizeWidth = 28
-    private var modelResultSizeHeight = 28
+    private var modelResultSizeWidth = 64
+    private var modelResultSizeHeight = 64
 
     // Function that load a tensorFlow lite model(.tflite) with a path to this model and create a interpreter wth it
     fun loadModelFromPath(context : Context, fileName : String){
@@ -95,7 +95,7 @@ class TensorModelManager {
 
         val input : TensorBuffer = TensorBuffer.createFixedSize(intArrayOf(1,100), DataType.FLOAT32)
         input.loadArray(randomNoise)
-        val output = TensorBuffer.createFixedSize(intArrayOf(1,28,28,3),DataType.FLOAT32)
+        val output = TensorBuffer.createFixedSize(intArrayOf(1,modelResultSizeWidth,modelResultSizeHeight,3),DataType.FLOAT32)
         interpreter?.run(input.buffer, output.buffer)
 
         val resRaw = output.buffer

@@ -413,7 +413,6 @@ class AnalyseActivity : AppCompatActivity() {
                 analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
             }
 
-
         }else{
             Log.d("ERROR", "Error when creating the faceGenerator")
         }
