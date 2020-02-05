@@ -402,27 +402,38 @@ class AnalyseActivity : AppCompatActivity() {
                 Log.d("ERROR", "Error, can't find a face in generated")
             }
             // Features of the generated face
-            val newDetectedFace:Face = detectedGenerated.valueAt(0)
+            var newDetectedFace:Face = detectedGenerated.valueAt(0)
+            // Cropping generated face
+            var newFaceCropped = createBitmap(newGeneratedFace, newDetectedFace.position.x.toInt(), newDetectedFace.position.y.toInt(), newDetectedFace.width.toInt(), newDetectedFace.height.toInt())
+            newFaceCropped = createScaledBitmap(newFaceCropped, currentFace.width.toInt(), currentFace.height.toInt(), true)
+            // Re-detecting cropped generated face
+            frame = Frame.Builder().setBitmap(newFaceCropped).build()
+            detectedGenerated = faceDetector!!.detect(frame)
 
-            // We get a crop of the current face
+
+
+            // We get a crop of the current face in the whole bitmap
             val currentFaceBitmap = Bitmap.createBitmap(currentBitmap, currentFace.position.x.toInt(), currentFace.position.y.toInt(), currentFace.width.toInt(), currentFace.height.toInt())
             var currentFrame = Frame.Builder().setBitmap(currentFaceBitmap).build()
             var detectedCurrent = faceDetector!!.detect(currentFrame)
 
             // If no face is detected in the crop of the current face, we can't do the morphing
-            if (detectedCurrent.size() != 1){
-                Log.d("ERROR", "Error, can't find a face in currentFace")
+            if (detectedCurrent.size() != 1 || detectedGenerated.size() != 1){
+                Log.d("ERROR", "Error, can't find a face in currentFace or cropped generated face")
             }
             else{
                 // Features of the cropped current face
                 val currentDetectedFace = detectedCurrent.valueAt(0)
+
+                // Features of the cropped generated face
+                newDetectedFace = detectedGenerated.valueAt(0)
 
                 // We need to remember the position of the original face in the current image
                 val posX = currentFace.position.x.toInt()
                 val posY = currentFace.position.y.toInt()
 
                 handler.post{
-                    var modifiedBitmap = computeFace(currentFaceBitmap, currentDetectedFace, posX, posY, newGeneratedFace, newDetectedFace, currentBitmap)
+                    var modifiedBitmap = computeFace(currentFaceBitmap, currentDetectedFace, posX, posY, newFaceCropped, newDetectedFace, currentBitmap)
                     analyse_image_view.setImageDrawable(BitmapDrawable(resources, modifiedBitmap))
                 }
             }
