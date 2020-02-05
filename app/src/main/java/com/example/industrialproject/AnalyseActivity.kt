@@ -361,11 +361,10 @@ class AnalyseActivity : AppCompatActivity() {
         val modifiedBitmap = createBitmap(currentBitmap)
         val modifiedBitmapCanvas = Canvas(modifiedBitmap)
         val paint = Paint()
-        paint.alpha = 100
 
         val mergedFace = createMergedFace(0.5f, currentFaceBitmap, currentFace, newGeneratedFace, newFace)
 
-        modifiedBitmapCanvas.drawBitmap(newGeneratedFace, posX.toFloat(), posY.toFloat(), paint)
+        modifiedBitmapCanvas.drawBitmap(mergedFace, posX.toFloat(), posY.toFloat(), paint)
 
         return modifiedBitmap
     }

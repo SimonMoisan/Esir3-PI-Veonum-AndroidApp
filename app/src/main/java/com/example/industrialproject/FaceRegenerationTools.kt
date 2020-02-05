@@ -1,17 +1,24 @@
 package com.example.industrialproject
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.util.Log
+import androidx.core.graphics.createBitmap
 import com.google.android.gms.vision.face.Face
+import org.bytedeco.javacpp.FloatPointer
 import org.bytedeco.javacpp.opencv_core
-import org.bytedeco.javacpp.opencv_core.CV_32F
+import org.bytedeco.javacpp.opencv_core.*
+import org.bytedeco.javacpp.opencv_imgproc
 import org.bytedeco.javacv.AndroidFrameConverter
 import org.bytedeco.javacv.Frame
 import org.bytedeco.javacv.OpenCVFrameConverter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import java.util.*
 import kotlin.experimental.and
+import org.bytedeco.javacpp.opencv_imgproc.*
 
 
 internal fun gray2rgba(
@@ -100,7 +107,7 @@ fun myFrameToBitmap(frame : Frame):Bitmap?{
     val buffer = frame.image[0]
 
     val `in` = ByteBuffer.allocate(buffer.capacity() * 4)
-    `in`.asFloatBuffer().put(buffer as FloatBuffer)
+    `in`.put(buffer as ByteBuffer)
 
     val width = frame.imageWidth
     val height = frame.imageHeight
@@ -131,30 +138,213 @@ fun myMatToBitmap(srcMat: opencv_core.Mat):Bitmap{
     return myFrameToBitmap(frame)!!
 }
 
+// Computes the affine transform between two triangles and applies it to srcMat
+fun applyAffine(srcMat:opencv_core.Mat, rectMorphed:Rect, triangle1:MutableList<opencv_core.Point2f>, triangle2:MutableList<opencv_core.Point2f>):opencv_core.Mat{
+
+    // Points of triangle 1
+    val triangle1Points = opencv_core.Point2f(3)
+    for(i in 0 until 3){
+        triangle1Points.position(i.toLong()).x(triangle1[i].x())
+        triangle1Points.position(i.toLong()).y(triangle1[i].y())
+    }
+    // Points of triangle 2
+    val triangle2Points = opencv_core.Point2f(3)
+    for(i in 0 until 3){
+        triangle2Points.position(i.toLong()).x(triangle2[i].x())
+        triangle2Points.position(i.toLong()).y(triangle2[i].y())
+    }
+
+    val resMat:Mat = Mat(rectMorphed.size(), srcMat.type())
+
+    val warp = getAffineTransform(triangle1Points.position(0), triangle2Points.position(0))
+    warpAffine(srcMat, resMat, warp, resMat.size(), INTER_LINEAR, BORDER_REFLECT_101, Scalar(0))
+
+    return resMat
+}
+
+// Creates a morphing and alpha blend of two triangles from img1 and img2 to imgDst
+fun morphTriangles(img1: Mat, img2: Mat, imgDst: Mat, triangle1:MutableList<opencv_core.Point2f>, triangle2:MutableList<opencv_core.Point2f>, triangleMorphed:MutableList<opencv_core.Point2f>, alpha: Double):Mat{
+
+    val triangle1Points = opencv_core.Point2f(3)
+    for(i in 0 until 3){
+        triangle1Points.position(i.toLong()).x(triangle1[i].x())
+        triangle1Points.position(i.toLong()).y(triangle1[i].y())
+    }
+    val triangle2Points = opencv_core.Point2f(3)
+    for(i in 0 until 3){
+        triangle2Points.position(i.toLong()).x(triangle2[i].x())
+        triangle2Points.position(i.toLong()).y(triangle2[i].y())
+    }
+    val triangleMorphedPoints = opencv_core.Point2f(3)
+    for(i in 0 until 3){
+        triangleMorphedPoints.position(i.toLong()).x(triangleMorphed[i].x())
+        triangleMorphedPoints.position(i.toLong()).y(triangleMorphed[i].y())
+    }
+
+    val matRect1 = Mat(triangle1Points.position(0))
+    val matRect2 = Mat(triangle2Points.position(0))
+    val matRectMorphed = Mat(triangleMorphedPoints.position(0))
+
+    val rect1 = boundingRect(matRect1)
+    val rect2 = boundingRect(matRect2)
+    val rectMorphed = boundingRect(matRectMorphed)
+
+    val listRect1 : MutableList<opencv_core.Point2f> = mutableListOf()
+    val listRect2 : MutableList<opencv_core.Point2f> = mutableListOf()
+    val listRectMorph : MutableList<opencv_core.Point2f> = mutableListOf()
+    val listRectInt : MutableList<opencv_core.Point> = mutableListOf()
+
+    for(i in 0 until 3){
+        listRectMorph.add(Point2f(triangleMorphed[i].x() - rectMorphed.x(), triangleMorphed[i].y() - rectMorphed.y()))
+        listRectInt.add(Point( (triangleMorphed[i].x() - rectMorphed.x()).toInt(), (triangleMorphed[i].y() - rectMorphed.y()).toInt()) )
+
+        listRect1.add(Point2f(triangle1[i].x() - rect1.x(), triangle1[i].y() - rect1.y()))
+        listRect2.add(Point2f(triangle2[i].x() - rect2.x(), triangle2[i].y() - rect2.y()))
+    }
+
+    val mask:Mat = opencv_core.Mat.zeros(rectMorphed.height(), rectMorphed.width(), CV_8UC4).asMat()
+
+    // Need to convert from list of point to mat
+    val pointsRectInt = opencv_core.Point2f(3)
+    for(i in 0 until 3){
+        pointsRectInt.position(i.toLong()).x(listRectInt[i].x().toFloat())
+        pointsRectInt.position(i.toLong()).y(listRectInt[i].y().toFloat())
+    }
+    val matRectInt = Mat(pointsRectInt.position(0))
+
+    matRectInt.convertTo(matRectInt, CV_32S)
+
+    fillConvexPoly(mask, matRectInt, Scalar(1.0, 1.0, 1.0, 1.0), 16, 0)
+
+    val img1Rect = Mat(img1.clone(), rect1)
+    val img2Rect = Mat(img2.clone(), rect2)
+
+    val warpImage1 = applyAffine(img1Rect, rectMorphed, triangle1, triangleMorphed)
+    val warpImage2 = applyAffine(img2Rect, rectMorphed, triangle2, triangleMorphed)
+
+    val imgInter1 = multiply(warpImage1,(1.0 - alpha)).asMat()
+    val imgInter2 = multiply(warpImage2, alpha).asMat()
+    val imgRect =  opencv_core.add(imgInter1, imgInter2).asMat()
+
+    val maskedImg = imgRect.mul(mask)
+    //Log.d("DEBUG", "Type of imgDst : "+imgDst.type())
+    //val bitmapDestCropped = Bitmap.createBitmap(myMatToBitmap(imgDst), rectMorphed.x(), rectMorphed.y(), rectMorphed.width(), rectMorphed.height())
+    //val matDestCropped = myBitmapToMat(bitmapDestCropped)
+
+    Log.d("DEBUG", "Size of imgDst : " + imgDst.rows() + " - "+imgDst.cols())
+    Log.d("DEBUG", "Size of rectMorphed : " + rectMorphed.height() + " - "+rectMorphed.width())
+    val matDestCropped = Mat(imgDst.clone(), rectMorphed)
+
+    val matSub = subtract(Scalar(1.0,1.0,1.0,1.0),mask).asMat()
+    //val matDestCroppedMorphed = multiply(matDestCropped, matSub).asMat()
+    val matDestCroppedMorphed = matDestCropped.mul(matSub)
+
+    val final = add(matDestCroppedMorphed, maskedImg).asMat()
+
+    val finalCroppedBitmap = myMatToBitmap(final)
+    val dstBitmap = myMatToBitmap(imgDst)
+
+    val dstCanvas = Canvas(dstBitmap)
+    val paint = Paint()
+    dstCanvas.drawBitmap(finalCroppedBitmap, rectMorphed.x().toFloat(), rectMorphed.y().toFloat(), paint)
+
+    return myBitmapToMat(dstBitmap)
+}
+
+// Returns a list of triangles from a subDiv2D containing points
+fun subDivToTriangles(subDiv: opencv_imgproc.Subdiv2D): MutableList<MutableList<opencv_core.Point2f>>{
+
+    val triangles: MutableList<MutableList<opencv_core.Point2f>> = mutableListOf()
+
+    val trianglesPoints = FloatPointer()
+    subDiv.getTriangleList(trianglesPoints)
+
+    // trianglesPoints.limit()*6 --> number of coordinates
+    // trianglesPoints.limit() --> number of triangles
+    // This is fixed in later updates of JavaCV (<=1.5) but we fail to install it
+
+    for(i in 0 until ((trianglesPoints.limit()*6) - 6) step 6){
+        val x1 = trianglesPoints.get(i)
+        val y1 = trianglesPoints.get(i+1)
+        val p1 = opencv_core.Point2f(x1, y1)
+
+        val x2 = trianglesPoints.get(i+2)
+        val y2 = trianglesPoints.get(i+3)
+        val p2 = opencv_core.Point2f(x2, y2)
+
+        val x3 = trianglesPoints.get(i+4)
+        val y3 = trianglesPoints.get(i+5)
+        val p3 = opencv_core.Point2f(x3, y3)
+
+        val currentTriangle: MutableList<opencv_core.Point2f> = mutableListOf()
+        currentTriangle.add(p1)
+        currentTriangle.add(p2)
+        currentTriangle.add(p3)
+
+        triangles.add(currentTriangle)
+    }
+    return triangles
+}
+
 // Merges two images together. The merging is controlled by alpha
 fun createMergedFace(alpha:Float, currentFaceBitmap:Bitmap, currentFace: Face, newFaceBitmap:Bitmap, newFace:Face):Bitmap{
 
-    //val originalMat = opencv_core.Mat.zeros(originalBitmap.height, originalBitmap.width, CV_32F)
-    //val originalMat = myBitmapToMat(originalBitmap)
+    // Creating a rectangle that bound all the points
+    val rectCurrent = opencv_core.Rect(0, 0, currentFaceBitmap.width, currentFaceBitmap.height)
+    // Create an instance of Subdiv2D to get Delaunay triangulation
+    val subCurrent = opencv_imgproc.Subdiv2D(rectCurrent)
+    // Insert all the points into sub
+    for (landmark in currentFace.landmarks){
+        val point = opencv_core.Point2f(landmark.position.x, landmark.position.y)
+        subCurrent.insert(point)
+    }
 
-    //val generatedMat = opencv_core.Mat.zeros(originalBitmap.height, originalBitmap.width, CV_32F)
-    //val generatedMat = myBitmapToMat(generatedBitmap)
+    // Process triangles again for newFace
+    val rectNew = opencv_core.Rect(0, 0, newFaceBitmap.width, newFaceBitmap.height)
+    val subNew = opencv_imgproc.Subdiv2D(rectNew)
+    for (landmark in newFace.landmarks){
+        val point = opencv_core.Point2f(landmark.position.x, landmark.position.y)
+        subNew.insert(point)
+    }
 
-    val mergedMat:opencv_core.Mat = opencv_core.Mat.zeros(currentFaceBitmap.height, currentFaceBitmap.width, CV_32F).asMat()
+    // Create points for the merged image
+    val subMerged = opencv_imgproc.Subdiv2D(rectNew)
+    for (i in 0 until  newFace.landmarks.size){
+        val x = (1 - alpha)*currentFace.landmarks[i].position.x + alpha*newFace.landmarks[i].position.x
+        val y = (1 - alpha)*currentFace.landmarks[i].position.y + alpha*newFace.landmarks[i].position.y
+        val point = opencv_core.Point2f(x, y)
+        subMerged.insert(point)
+    }
 
-    // Step 1 : detect features in both faces
+    // Getting the triangles from the points in subDiv2D
+    val trianglesCurrent = subDivToTriangles(subCurrent)
+    val trianglesNew = subDivToTriangles(subNew)
+    val trianglesMerged = subDivToTriangles(subMerged)
 
-    // Step 2 : match the features
+    val currentFaceBitmap8888 = currentFaceBitmap.copy(Bitmap.Config.ARGB_8888, true)
 
-    // Step 3 : Delaunay triangulation
+    val currentFaceMat = myBitmapToMat(currentFaceBitmap8888)
+    val newFaceMat = myBitmapToMat(newFaceBitmap)
 
-    // Step 4 : compute affine transforms between triangles
+    var imgDst = Mat(currentFaceBitmap.height, currentFaceBitmap.width, newFaceMat.type())
 
-    // Step 5 : morph images from alpha and affine transforms
+    Log.d("DEBUG", "Size of imgDst before : " + imgDst.rows() + " - "+imgDst.cols())
+    Log.d("DEBUG", "Size of currentFaceBitmap before : " + currentFaceBitmap.height + " - "+currentFaceBitmap.width)
 
-    // Step 6 : convert back to RBG Bitmap
+    Log.d("DEBUG", "Size of trianglesCurrent: " + trianglesCurrent.size)
+    Log.d("DEBUG", "Size of trianglesNew : " + trianglesNew.size)
 
-    //val res:Bitmap = Bitmap.createBitmap(generatedBitmap)
-    val res = myMatToBitmap(mergedMat)
-    return res
+    Log.d("DEBUG", "Size of currentFaceFace features: " + currentFace.landmarks.size)
+    Log.d("DEBUG", "Size of newFace features : " + newFace.landmarks.size)
+
+    for(i in 0 until trianglesCurrent.size){
+
+        val triangle1 = trianglesCurrent[i]
+        val triangle2 = trianglesNew[i]
+        val triangleMorphed = trianglesMerged[i]
+
+        imgDst = morphTriangles(currentFaceMat, newFaceMat, imgDst, triangle1, triangle2, triangleMorphed, alpha.toDouble())
+
+        }
+    return myMatToBitmap(imgDst)
 }
