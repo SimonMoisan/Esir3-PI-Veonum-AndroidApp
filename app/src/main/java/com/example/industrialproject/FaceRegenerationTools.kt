@@ -150,6 +150,67 @@ fun listToPoint2fArray(srcList:MutableList<opencv_core.Point2f>):opencv_core.Poi
     return res
 }
 
+// Gets the index of the feature from the coordinates of the point
+fun getIndex(listOfFeaturePoints:MutableList<Landmark>, pointToFind:opencv_core.Point2f):Int{
+    for(i in 0 until listOfFeaturePoints.size){
+        val currentPoint = listOfFeaturePoints[i]
+        if(currentPoint.position.x==pointToFind.x() && currentPoint.position.y==pointToFind.y()){
+            return i
+        }
+    }
+    return -1
+}
+
+// Computes triangulation of second face features, from Delaunay Triangulation of first face features
+// subDiv : subdiv2D containing points from first image
+// featuresFirst : list of features of the first face
+// featuresSecond : list of features of the second face
+// Returns a list of triangles corresponding to the triangulation of the second face (in coordinates, not indexes)
+fun triangulationFromSubdiv(subDiv: opencv_imgproc.Subdiv2D, featuresFirst:MutableList<Landmark>, featuresSecond:MutableList<Landmark>):MutableList<MutableList<opencv_core.Point2f>>{
+    
+    // Find the index in feature list for each point of each triangles in first face
+    val trianglesFirstFace = subDivToTriangles(subDiv)
+    val trianglesIndexes : MutableList<MutableList<Int>> = mutableListOf()
+    for(triangle in trianglesFirstFace){
+        val point1 = triangle[0]
+        val point2 = triangle[1]
+        val point3 = triangle[2]
+
+        val index1 = getIndex(featuresFirst, point1)
+        val index2 = getIndex(featuresFirst, point2)
+        val index3 = getIndex(featuresFirst, point3)
+
+        // Getting the indexes in the feature list instead of the coordinates that we get from subDiv2D
+        if (index1 != -1 && index2 != -1 && index3 != -1){
+            val triangleIndex : MutableList<Int> = mutableListOf()
+            triangleIndex.add(index1)
+            triangleIndex.add(index2)
+            triangleIndex.add(index3)
+            trianglesIndexes.add(triangleIndex)
+        }
+    }
+
+    //Triangulating the second face from the first face delaunay triangulation
+    val trianglesSecondFace : MutableList<MutableList<opencv_core.Point2f>> = mutableListOf()
+    for (triangleIndex in trianglesIndexes){
+        val landmark1 = featuresSecond[triangleIndex[0]]
+        val landmark2 = featuresSecond[triangleIndex[1]]
+        val landmark3 = featuresSecond[triangleIndex[2]]
+
+        val point1 = opencv_core.Point2f(landmark1.position.x, landmark1.position.y)
+        val point2 = opencv_core.Point2f(landmark2.position.x, landmark2.position.y)
+        val point3 = opencv_core.Point2f(landmark3.position.x, landmark3.position.y)
+
+        val triangleCurrent : MutableList<opencv_core.Point2f> = mutableListOf()
+        triangleCurrent.add(point1)
+        triangleCurrent.add(point2)
+        triangleCurrent.add(point3)
+
+        trianglesSecondFace.add(triangleCurrent)
+    }
+    return trianglesSecondFace
+}
+
 // Computes the affine transform between two triangles and applies it to srcMat
 fun applyAffine(srcMat:opencv_core.Mat, rectMorphed:Rect, triangle1:MutableList<opencv_core.Point2f>, triangle2:MutableList<opencv_core.Point2f>):opencv_core.Mat{
 
