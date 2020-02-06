@@ -161,13 +161,47 @@ fun getIndex(listOfFeaturePoints:MutableList<Landmark>, pointToFind:opencv_core.
     return -1
 }
 
+// Returns a list of triangles from a subDiv2D containing points
+fun subDivToTriangles(subDiv: opencv_imgproc.Subdiv2D): MutableList<MutableList<opencv_core.Point2f>>{
+
+    val triangles: MutableList<MutableList<opencv_core.Point2f>> = mutableListOf()
+    val trianglesPoints = FloatPointer()
+    subDiv.getTriangleList(trianglesPoints)
+
+    // trianglesPoints.limit()*6 --> number of coordinates
+    // trianglesPoints.limit() --> number of triangles
+    // This is fixed in later updates of JavaCV (<=1.5) but we fail to install it
+
+    for(i in 0 until ((trianglesPoints.limit()*6) - 5) step 6){
+        val x1 = trianglesPoints.get(i)
+        val y1 = trianglesPoints.get(i+1)
+        val p1 = opencv_core.Point2f(x1, y1)
+
+        val x2 = trianglesPoints.get(i+2)
+        val y2 = trianglesPoints.get(i+3)
+        val p2 = opencv_core.Point2f(x2, y2)
+
+        val x3 = trianglesPoints.get(i+4)
+        val y3 = trianglesPoints.get(i+5)
+        val p3 = opencv_core.Point2f(x3, y3)
+
+        val currentTriangle: MutableList<opencv_core.Point2f> = mutableListOf()
+        currentTriangle.add(p1)
+        currentTriangle.add(p2)
+        currentTriangle.add(p3)
+
+        triangles.add(currentTriangle)
+    }
+    return triangles
+}
+
 // Computes triangulation of second face features, from Delaunay Triangulation of first face features
 // subDiv : subdiv2D containing points from first image
 // featuresFirst : list of features of the first face
 // featuresSecond : list of features of the second face
 // Returns a list of triangles corresponding to the triangulation of the second face (in coordinates, not indexes)
 fun triangulationFromSubdiv(subDiv: opencv_imgproc.Subdiv2D, featuresFirst:MutableList<Landmark>, featuresSecond:MutableList<Landmark>):MutableList<MutableList<opencv_core.Point2f>>{
-    
+
     // Find the index in feature list for each point of each triangles in first face
     val trianglesFirstFace = subDivToTriangles(subDiv)
     val trianglesIndexes : MutableList<MutableList<Int>> = mutableListOf()
@@ -231,21 +265,9 @@ fun applyAffine(srcMat:opencv_core.Mat, rectMorphed:Rect, triangle1:MutableList<
 // Creates a morphing and alpha blend of two triangles from img1 and img2 to imgDst
 fun morphTriangles(img1: Mat, img2: Mat, imgDst: Mat, triangle1:MutableList<opencv_core.Point2f>, triangle2:MutableList<opencv_core.Point2f>, triangleMorphed:MutableList<opencv_core.Point2f>, alpha: Double):Mat{
 
-    val triangle1Points = opencv_core.Point2f(3)
-    for(i in 0 until 3){
-        triangle1Points.position(i.toLong()).x(triangle1[i].x())
-        triangle1Points.position(i.toLong()).y(triangle1[i].y())
-    }
-    val triangle2Points = opencv_core.Point2f(3)
-    for(i in 0 until 3){
-        triangle2Points.position(i.toLong()).x(triangle2[i].x())
-        triangle2Points.position(i.toLong()).y(triangle2[i].y())
-    }
-    val triangleMorphedPoints = opencv_core.Point2f(3)
-    for(i in 0 until 3){
-        triangleMorphedPoints.position(i.toLong()).x(triangleMorphed[i].x())
-        triangleMorphedPoints.position(i.toLong()).y(triangleMorphed[i].y())
-    }
+    val triangle1Points = listToPoint2fArray(triangle1)
+    val triangle2Points = listToPoint2fArray(triangle2)
+    val triangleMorphedPoints = listToPoint2fArray(triangleMorphed)
 
     val matRect1 = Mat(triangle1Points.position(0))
     val matRect2 = Mat(triangle2Points.position(0))
@@ -310,40 +332,6 @@ fun morphTriangles(img1: Mat, img2: Mat, imgDst: Mat, triangle1:MutableList<open
     return myBitmapToMat(dstBitmap)
 }
 
-// Returns a list of triangles from a subDiv2D containing points
-fun subDivToTriangles(subDiv: opencv_imgproc.Subdiv2D): MutableList<MutableList<opencv_core.Point2f>>{
-
-    val triangles: MutableList<MutableList<opencv_core.Point2f>> = mutableListOf()
-    val trianglesPoints = FloatPointer()
-    subDiv.getTriangleList(trianglesPoints)
-
-    // trianglesPoints.limit()*6 --> number of coordinates
-    // trianglesPoints.limit() --> number of triangles
-    // This is fixed in later updates of JavaCV (<=1.5) but we fail to install it
-
-    for(i in 0 until ((trianglesPoints.limit()*6) - 5) step 6){
-        val x1 = trianglesPoints.get(i)
-        val y1 = trianglesPoints.get(i+1)
-        val p1 = opencv_core.Point2f(x1, y1)
-
-        val x2 = trianglesPoints.get(i+2)
-        val y2 = trianglesPoints.get(i+3)
-        val p2 = opencv_core.Point2f(x2, y2)
-
-        val x3 = trianglesPoints.get(i+4)
-        val y3 = trianglesPoints.get(i+5)
-        val p3 = opencv_core.Point2f(x3, y3)
-
-        val currentTriangle: MutableList<opencv_core.Point2f> = mutableListOf()
-        currentTriangle.add(p1)
-        currentTriangle.add(p2)
-        currentTriangle.add(p3)
-
-        triangles.add(currentTriangle)
-    }
-    return triangles
-}
-
 // Merges two images together. The merging is controlled by alpha
 fun createMergedFace(alpha:Float, currentFaceBitmap:Bitmap, currentFace: Face, newFaceBitmap:Bitmap, newFace:Face):Bitmap{
 
@@ -400,7 +388,7 @@ fun createMergedFace(alpha:Float, currentFaceBitmap:Bitmap, currentFace: Face, n
     val trianglesNew = subDivToTriangles(subNew)
     val trianglesMerged = subDivToTriangles(subMerged)
 
-    val currentFaceBitmap8888 = currentFaceBitmap.copy(Bitmap.Config.RGB_565, true)
+    val currentFaceBitmap8888 = currentFaceBitmap.copy(Bitmap.Config.ARGB_8888, true)
 
     val currentFaceMat = myBitmapToMat(currentFaceBitmap8888)
     val newFaceMat = myBitmapToMat(newFaceBitmap)
