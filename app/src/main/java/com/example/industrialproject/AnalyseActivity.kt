@@ -296,8 +296,6 @@ class AnalyseActivity : AppCompatActivity() {
 
         val xOffset = 100
 
-        //TODO The others possibilities
-
         if(parentButton.x + textSizeW + parentButtonWidthPx + xOffset >= screenWidth &&
                 parentButton.x - textSizeW - parentButton.width <= 0){
 
