@@ -36,13 +36,13 @@ class PrerequisiteActivity : AppCompatActivity() {
 
                 try {
                     super.run()
-                    sleep(1000)
+                    sleep(100)
                     testsPrerequisites()
                 } catch (e: Exception) {
                     throw e
                 } finally {
                     // If everything is okay, go automatically to the main screen
-                    sleep(1000)
+                    sleep(200)
                     startActivityFromMainThread()
                     finish()
                 }
@@ -76,7 +76,7 @@ class PrerequisiteActivity : AppCompatActivity() {
         if(!testsGooglePrerequisites(t)){
 
             //If we can't use Google Vision libs
-            updateText("Google Vision librairies not found !", t)
+            updateText("Google Vision libraries not found !", t)
             Thread.sleep(1000)
 
             // Test Google Play
@@ -84,7 +84,7 @@ class PrerequisiteActivity : AppCompatActivity() {
             if(!testsGooglePlayVersion(t)){
 
                 //If not success reaching for Google Play Services
-                updateText("Error Google Play Service unreacheable", t)
+                updateText("Error Google Play Service unreachable", t)
                 Thread.sleep(2000)
 
             }else{
@@ -103,7 +103,7 @@ class PrerequisiteActivity : AppCompatActivity() {
         }else{
 
             //If we can use Google Vision libs
-            updateText("Google Vision librairies found", t)
+            updateText("Google Vision libraries found", t)
             Thread.sleep(1000)
 
         }

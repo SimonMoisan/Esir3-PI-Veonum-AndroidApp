@@ -33,7 +33,7 @@ class AnalyseActivity : AppCompatActivity() {
     // Parameters for the generator Thread
     private var currentFaceParam:Face?     = null
     private var currentBitmapParam:Bitmap? = null
-    private var contextParam:Context? = null
+    private var contextParam:Context?      = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         var analyseDone = false
