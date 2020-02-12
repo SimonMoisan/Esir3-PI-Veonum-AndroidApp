@@ -25,6 +25,9 @@ class TensorModelManager {
     private var modelResultSizeWidth = 64
     private var modelResultSizeHeight = 64
 
+    // Size of the random noise model input
+    private var noiseInputSize = 256
+
     // Function that load a tensorFlow lite model(.tflite) with a path to this model and create a interpreter wth it
     fun loadModelFromPath(context : Context, fileName : String){
 
@@ -92,14 +95,14 @@ class TensorModelManager {
     // Main function that generate a random face
     fun generateFace() : Bitmap{
 
-        val randomNoise = FloatArray(100)
+        val randomNoise = FloatArray(noiseInputSize)
         val rand = Random()
 
-        for (x in 0..99){
+        for (x in 0 until noiseInputSize){
             randomNoise[x] = rand.nextGaussian().toFloat()
         }
 
-        val input : TensorBuffer = TensorBuffer.createFixedSize(intArrayOf(1,100), DataType.FLOAT32)
+        val input : TensorBuffer = TensorBuffer.createFixedSize(intArrayOf(1,noiseInputSize), DataType.FLOAT32)
         input.loadArray(randomNoise)
         val output = TensorBuffer.createFixedSize(intArrayOf(1,modelResultSizeWidth,modelResultSizeHeight,3),DataType.FLOAT32)
         interpreter?.run(input.buffer, output.buffer)
@@ -164,6 +167,12 @@ class TensorModelManager {
         byteBuffer.put(bytes)
 
         return byteBuffer
+    }
+
+    // function to set the ramdom noise model input size
+    // 256 by default
+    fun setInputSize(inputSize : Int){
+        noiseInputSize = inputSize
     }
 
     // function that close properly the interpreter

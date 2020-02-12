@@ -402,7 +402,7 @@ class AnalyseActivity : AppCompatActivity() {
 
             // We get the face and compute its dimension and coordinates.
             val generatedFace:Face = detectedGenerated.valueAt(0)
-            val newFaceTemp = Bitmap.createBitmap(newFace, generatedFace.position.x.toInt(), generatedFace.position.y.toInt(), generatedFace.width.toInt(), generatedFace.height.toInt())
+            val newFaceTemp = Bitmap.createBitmap(newFace, generatedFace.position.x.toInt(), generatedFace.position.y.toInt(), generatedFace.width.toInt() - 1, generatedFace.height.toInt() - 1)
             // We get only the face in the generated picture, to have as little background as possible
             newFace = createScaledBitmap(newFaceTemp, currentFace.width.toInt(), currentFace.height.toInt(), true)
 
