@@ -22,6 +22,7 @@ import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
+import org.tensorflow.lite.support.image.ImageProcessor
 
 class AnalyseActivity : AppCompatActivity() {
 
@@ -121,7 +122,10 @@ class AnalyseActivity : AppCompatActivity() {
         val options = BitmapFactory.Options()
         options.inMutable=true
         //val bitmapToAnalyse = BitmapFactory.decodeFile(imageUri, options)
-        val bitmapToAnalyse = analyse_image_view.drawable.toBitmap()
+        var bitmapToAnalyse = analyse_image_view.drawable.toBitmap()
+        if (bitmapToAnalyse.config != Bitmap.Config.ARGB_8888) {
+            bitmapToAnalyse = bitmapToAnalyse.copy(Bitmap.Config.ARGB_8888,true)
+        }
         
         //Paint object to display red squares for the faces
         val rectPaint = Paint()

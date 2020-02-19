@@ -150,11 +150,21 @@ fun listToPoint2fArray(srcList:MutableList<opencv_core.Point2f>):opencv_core.Poi
     return res
 }
 
+// Transforms a triangle (list of Point) into an triangle (array of Point)
+fun listToPointArray(srcList:MutableList<opencv_core.Point>):opencv_core.Point{
+    val res = opencv_core.Point(3)
+    for(i in 0 until 3){
+        res.position(i.toLong()).x(srcList[i].x().toInt())
+        res.position(i.toLong()).y(srcList[i].y().toInt())
+    }
+    return res
+}
+
 // Gets the index of the feature from the coordinates of the point
-fun getIndex(listOfFeaturePoints:MutableList<Landmark>, pointToFind:opencv_core.Point2f):Int{
+fun getIndex(listOfFeaturePoints:MutableList<opencv_core.Point2f>, pointToFind:opencv_core.Point2f):Int{
     for(i in 0 until listOfFeaturePoints.size){
         val currentPoint = listOfFeaturePoints[i]
-        if(currentPoint.position.x==pointToFind.x() && currentPoint.position.y==pointToFind.y()){
+        if(currentPoint.x()==pointToFind.x() && currentPoint.y()==pointToFind.y()){
             return i
         }
     }
@@ -200,12 +210,13 @@ fun subDivToTriangles(subDiv: opencv_imgproc.Subdiv2D): MutableList<MutableList<
 // featuresFirst : list of features of the first face
 // featuresSecond : list of features of the second face
 // Returns a list of triangles corresponding to the triangulation of the second face (in coordinates, not indexes)
-fun triangulationFromSubdiv(subDiv: opencv_imgproc.Subdiv2D, featuresFirst:MutableList<Landmark>, featuresSecond:MutableList<Landmark>):MutableList<MutableList<opencv_core.Point2f>>{
+fun triangulationFromSubdiv(subDiv: opencv_imgproc.Subdiv2D, featuresFirst:MutableList<opencv_core.Point2f>, featuresSecond:MutableList<opencv_core.Point2f>):MutableList<MutableList<opencv_core.Point2f>>{
 
     // Find the index in feature list for each point of each triangles in first face
     val trianglesFirstFace = subDivToTriangles(subDiv)
     val trianglesIndexes : MutableList<MutableList<Int>> = mutableListOf()
     for(triangle in trianglesFirstFace){
+
         val point1 = triangle[0]
         val point2 = triangle[1]
         val point3 = triangle[2]
@@ -223,17 +234,12 @@ fun triangulationFromSubdiv(subDiv: opencv_imgproc.Subdiv2D, featuresFirst:Mutab
             trianglesIndexes.add(triangleIndex)
         }
     }
-
     //Triangulating the second face from the first face delaunay triangulation
     val trianglesSecondFace : MutableList<MutableList<opencv_core.Point2f>> = mutableListOf()
     for (triangleIndex in trianglesIndexes){
-        val landmark1 = featuresSecond[triangleIndex[0]]
-        val landmark2 = featuresSecond[triangleIndex[1]]
-        val landmark3 = featuresSecond[triangleIndex[2]]
-
-        val point1 = opencv_core.Point2f(landmark1.position.x, landmark1.position.y)
-        val point2 = opencv_core.Point2f(landmark2.position.x, landmark2.position.y)
-        val point3 = opencv_core.Point2f(landmark3.position.x, landmark3.position.y)
+        val point1 = featuresSecond[triangleIndex[0]]
+        val point2 = featuresSecond[triangleIndex[1]]
+        val point3 = featuresSecond[triangleIndex[2]]
 
         val triangleCurrent : MutableList<opencv_core.Point2f> = mutableListOf()
         triangleCurrent.add(point1)
@@ -257,7 +263,7 @@ fun applyAffine(srcMat:opencv_core.Mat, rectMorphed:Rect, triangle1:MutableList<
     val resMat:Mat = Mat(rectMorphed.size(), srcMat.type())
 
     val warp = getAffineTransform(triangle1Points.position(0), triangle2Points.position(0))
-    warpAffine(srcMat, resMat, warp, resMat.size(), INTER_LINEAR, BORDER_REFLECT_101, Scalar(0))
+    warpAffine(srcMat, resMat, warp, resMat.size())
 
     return resMat
 }
@@ -300,34 +306,80 @@ fun morphTriangles(img1: Mat, img2: Mat, imgDst: Mat, triangle1:MutableList<open
     }
     val matRectInt = Mat(pointsRectInt.position(0))
     matRectInt.convertTo(matRectInt, CV_32S)
-    fillConvexPoly(mask, matRectInt, Scalar(1.0, 1.0, 1.0, 1.0), 16, 0)
+    fillConvexPoly(mask, matRectInt, Scalar(1.0, 1.0, 1.0, 1.0), 8, 0)
 
+    // Cropping img- with rect-
     val img1Rect = Mat(img1.clone(), rect1)
     val img2Rect = Mat(img2.clone(), rect2)
+
+    val matDestCropped = Mat(imgDst.clone(), rectMorphed)
 
     val warpImage1 = applyAffine(img1Rect, rectMorphed, triangle1, triangleMorphed)
     val warpImage2 = applyAffine(img2Rect, rectMorphed, triangle2, triangleMorphed)
 
-    val imgInter1 = multiply(warpImage1,(1.0 - alpha)).asMat()
-    val imgInter2 = multiply(warpImage2, alpha).asMat()
-    val imgRect =  opencv_core.add(imgInter1, imgInter2).asMat()
-
+    val imgRect =  opencv_core.add(multiply(warpImage1,(1.0 - alpha)).asMat(), multiply(warpImage2, alpha).asMat()).asMat()
     val maskedImg = imgRect.mul(mask)
 
-    val matDestCropped = Mat(imgDst.clone(), rectMorphed)
-
-    val matSub = subtract(Scalar(1.0,1.0,1.0,1.0),mask).asMat()
-
-    val matDestCroppedMorphed = matDestCropped.mul(matSub)
-
-    val final = add(matDestCroppedMorphed, maskedImg).asMat()
+    val final = add(matDestCropped.mul(subtract(Scalar(1.0,1.0,1.0,1.0),mask).asMat()), maskedImg).asMat()
 
     val finalCroppedBitmap = myMatToBitmap(final)
     val dstBitmap = myMatToBitmap(imgDst)
 
     val dstCanvas = Canvas(dstBitmap)
-    val paint = Paint()
-    dstCanvas.drawBitmap(finalCroppedBitmap, rectMorphed.x().toFloat(), rectMorphed.y().toFloat(), paint)
+    dstCanvas.drawBitmap(finalCroppedBitmap, rectMorphed.x().toFloat(), rectMorphed.y().toFloat(), Paint())
+
+    return myBitmapToMat(dstBitmap)
+}
+
+// Creates a morphing and alpha blend of two triangles from img1 and img2 to imgDst
+fun swapTriangles(img1: Mat, img2: Mat, imgDst: Mat, triangle1:MutableList<opencv_core.Point2f>, triangle2:MutableList<opencv_core.Point2f>, alpha: Double):Mat{
+
+    val triangle1Points = listToPoint2fArray(triangle1)
+    val triangle2Points = listToPoint2fArray(triangle2)
+
+    val matRect1 = Mat(triangle1Points.position(0))
+    val matRect2 = Mat(triangle2Points.position(0))
+
+    val rect1 = boundingRect(matRect1)
+    val rect2 = boundingRect(matRect2)
+
+    val listRect1 : MutableList<opencv_core.Point2f> = mutableListOf()
+    val listRect2 : MutableList<opencv_core.Point2f> = mutableListOf()
+    val listRectMorph : MutableList<opencv_core.Point2f> = mutableListOf()
+    val listRectInt : MutableList<opencv_core.Point> = mutableListOf()
+
+    for(i in 0 until 3){
+        listRectInt.add(Point( (triangle1[i].x() - rect1.x()).toInt(), (triangle1[i].y() - rect1.y()).toInt()) )
+
+        listRect1.add(Point2f(triangle1[i].x() - rect1.x(), triangle1[i].y() - rect1.y()))
+        listRect2.add(Point2f(triangle2[i].x() - rect2.x(), triangle2[i].y() - rect2.y()))
+    }
+
+    // Filling convex poly with mask
+    val mask:Mat = opencv_core.Mat.zeros(rect1.height(), rect1.width(), CV_8UC4).asMat()
+    val pointsRectInt = listToPointArray(listRectInt)
+    val matRectInt = Mat(pointsRectInt.position(0))
+    matRectInt.convertTo(matRectInt, CV_32S)
+    fillConvexPoly(mask, matRectInt, Scalar(0.0, 0.0, 0.0, 255.0), 8, 0)
+
+    // Cropping img- with rect-
+    val img1Rect = Mat(img1.clone(), rect1)
+    val img2Rect = Mat(img2.clone(), rect2)
+
+    val matDestCropped = Mat(imgDst.clone(), rect1)
+
+    val warpImage1 = applyAffine(img1Rect, rect1, triangle1, triangle2)
+
+    val imgRect =  warpImage1
+    val maskedImg = imgRect.mul(mask)
+
+    val final = add(matDestCropped.mul(subtract(Scalar(1.0,1.0,1.0,1.0),mask).asMat()), maskedImg).asMat()
+
+    val finalCroppedBitmap = myMatToBitmap(final)
+    val dstBitmap = myMatToBitmap(imgDst)
+
+    val dstCanvas = Canvas(dstBitmap)
+    dstCanvas.drawBitmap(finalCroppedBitmap, rect1.x().toFloat(), rect1.y().toFloat(), Paint())
 
     return myBitmapToMat(dstBitmap)
 }
@@ -336,71 +388,52 @@ fun morphTriangles(img1: Mat, img2: Mat, imgDst: Mat, triangle1:MutableList<open
 fun createMergedFace(alpha:Float, currentFaceBitmap:Bitmap, currentFace: Face, newFaceBitmap:Bitmap, newFace:Face):Bitmap{
 
     // Sorting detected landmarks (because the detector doesn't always return the same numbers of features)
-    val sortedCurrentLandmarks:MutableList<Landmark> = mutableListOf()
-    val sortedNewLandmarks:MutableList<Landmark> = mutableListOf()
+    val sortedCurrentLandmarks:MutableList<opencv_core.Point2f> = mutableListOf()
+    val sortedNewLandmarks:MutableList<opencv_core.Point2f> = mutableListOf()
     for (currentLandmark in currentFace.landmarks){
         for (newLandmark in newFace.landmarks){
             if(currentLandmark.type == newLandmark.type){
-                sortedCurrentLandmarks.add(currentLandmark)
-                sortedNewLandmarks.add(newLandmark)
+                val pointCurrent = opencv_core.Point2f(currentLandmark.position.x, currentLandmark.position.y)
+                sortedCurrentLandmarks.add(pointCurrent)
+                val pointNew = opencv_core.Point2f(newLandmark.position.x, newLandmark.position.y)
+                sortedNewLandmarks.add(pointNew)
                 break
             }
         }
     }
+    // Manually adding a point on the top middle of the images
+    sortedCurrentLandmarks.add(opencv_core.Point2f(currentFaceBitmap.width/2.0f, 1.0f))
+    sortedNewLandmarks.add(opencv_core.Point2f(newFaceBitmap.width/2.0f, 1.0f))
+    sortedCurrentLandmarks.add(opencv_core.Point2f(currentFaceBitmap.width/2.0f, currentFaceBitmap.height.toFloat()-1.0f))
+    sortedNewLandmarks.add(opencv_core.Point2f(newFaceBitmap.width/2.0f,  newFaceBitmap.height.toFloat()-1.0f))
 
     // Creating a rectangle that bound all the points
     val rectCurrent = opencv_core.Rect(0, 0, currentFaceBitmap.width, currentFaceBitmap.height)
     // Create an instance of Subdiv2D to get Delaunay triangulation
     val subCurrent = opencv_imgproc.Subdiv2D(rectCurrent)
     // Insert all the points into sub
-    for (landmark in sortedCurrentLandmarks){
-        val point = opencv_core.Point2f(landmark.position.x, landmark.position.y)
+    for (point in sortedCurrentLandmarks){
         subCurrent.insert(point)
     }
-    val lastPointCurrent = opencv_core.Point2f(currentFaceBitmap.width/2.0f, 0.0f)
-    subCurrent.insert(lastPointCurrent)
-
-    // Process triangles again for newFace
-    val rectNew = opencv_core.Rect(0, 0, newFaceBitmap.width, newFaceBitmap.height)
-    val subNew = opencv_imgproc.Subdiv2D(rectNew)
-    for (landmark in sortedNewLandmarks){
-        val point = opencv_core.Point2f(landmark.position.x, landmark.position.y)
-        subNew.insert(point)
-    }
-    val lastPointNew = opencv_core.Point2f(newFaceBitmap.width/2.0f, 0.0f)
-    subNew.insert(lastPointNew)
+    val trianglesCurrent =  subDivToTriangles(subCurrent)
+    val trianglesNew = triangulationFromSubdiv(subCurrent, sortedCurrentLandmarks, sortedNewLandmarks)
 
     // Create points for the merged image
-    val subMerged = opencv_imgproc.Subdiv2D(rectCurrent)
+    val sortedMergedLandmarks:MutableList<opencv_core.Point2f> = mutableListOf()
     for (i in 0 until  sortedCurrentLandmarks.size){
-        val x = (1 - alpha)*sortedCurrentLandmarks[i].position.x + alpha*sortedNewLandmarks[i].position.x
-        val y = (1 - alpha)*sortedCurrentLandmarks[i].position.y + alpha*sortedNewLandmarks[i].position.y
+        val x = (1.0f - alpha)*sortedCurrentLandmarks[i].x() + alpha*sortedNewLandmarks[i].x()
+        val y = (1.0f - alpha)*sortedCurrentLandmarks[i].y() + alpha*sortedNewLandmarks[i].y()
         val point = opencv_core.Point2f(x, y)
-        subMerged.insert(point)
+        //val point = opencv_core.Point2f(sortedCurrentLandmarks[i].x(), sortedCurrentLandmarks[i].y())
+        sortedMergedLandmarks.add(point)
     }
-    val xLast = (1 - alpha)* lastPointCurrent.x() + alpha * lastPointNew.x()
-    val yLast = (1 - alpha)* lastPointCurrent.y() + alpha * lastPointNew.y()
-    val point = opencv_core.Point2f(xLast, yLast)
-    subMerged.insert(point)
-
-    // Getting the triangles from the points in subDiv2D
-    val trianglesCurrent = subDivToTriangles(subCurrent)
-    val trianglesNew = subDivToTriangles(subNew)
-    val trianglesMerged = subDivToTriangles(subMerged)
+    val trianglesMerged = triangulationFromSubdiv(subCurrent, sortedCurrentLandmarks, sortedMergedLandmarks)
 
     val currentFaceBitmap8888 = currentFaceBitmap.copy(Bitmap.Config.ARGB_8888, true)
-
     val currentFaceMat = myBitmapToMat(currentFaceBitmap8888)
     val newFaceMat = myBitmapToMat(newFaceBitmap)
 
-    var imgDst = Mat(currentFaceBitmap.height, currentFaceBitmap.width, newFaceMat.type())
-
-    Log.d("DEBUG", "Size of sortedCurrentLandmarks: " + sortedCurrentLandmarks.size)
-    Log.d("DEBUG", "Size of sortedNewLandmarks : " + sortedNewLandmarks.size)
-
-    Log.d("DEBUG", "Size of trianglesCurrent: " + trianglesCurrent.size)
-    Log.d("DEBUG", "Size of trianglesNew : " + trianglesNew.size)
-    Log.d("DEBUG", "Size of trianglesMerged : " + trianglesMerged.size)
+    var imgDst = Mat(currentFaceMat.size(), currentFaceMat.type())
 
     for(i in 0 until min(min(trianglesNew.size, trianglesMerged.size), trianglesCurrent.size)){
 
@@ -409,7 +442,35 @@ fun createMergedFace(alpha:Float, currentFaceBitmap:Bitmap, currentFace: Face, n
         val triangleMorphed = trianglesMerged[i]
 
         imgDst = morphTriangles(currentFaceMat, newFaceMat, imgDst, triangle1, triangle2, triangleMorphed, alpha.toDouble())
+        //imgDst = swapTriangles(currentFaceMat, newFaceMat, imgDst, triangle1, triangle2, alpha.toDouble())
+
+        val point1 = opencv_core.Point(triangle1[0].x().toInt(), triangle1[0].y().toInt())
+        val point2 = opencv_core.Point(triangle1[1].x().toInt(), triangle1[1].y().toInt())
+        val point3 = opencv_core.Point(triangle1[2].x().toInt(), triangle1[2].y().toInt())
+        //circle(imgDst, point1, 10,Scalar(0.0, 255.0, 0.0, 255.0),-1,8,0)
+        //circle(imgDst, point2, 10,Scalar(0.0, 255.0, 0.0, 255.0),-1,8,0)
+        //circle(imgDst, point3, 10,Scalar(0.0, 255.0, 0.0, 255.0),-1,8,0)
+
+        val pointNew1 = opencv_core.Point(triangle2[0].x().toInt(), triangle2[0].y().toInt())
+        val pointNew2 = opencv_core.Point(triangle2[1].x().toInt(), triangle2[1].y().toInt())
+        val pointNew3 = opencv_core.Point(triangle2[2].x().toInt(), triangle2[2].y().toInt())
+        //circle(imgDst, pointNew1, 10,Scalar(0.0, 0.0, 255.0, 255.0),-1,8,0)
+        //circle(imgDst, pointNew2, 10,Scalar(0.0, 0.0, 255.0, 255.0),-1,8,0)
+        //circle(imgDst, pointNew3, 10,Scalar(0.0, 0.0, 255.0, 255.0),-1,8,0)
+
+        val pointM1 = opencv_core.Point(triangleMorphed[0].x().toInt(), triangle2[0].y().toInt())
+        val pointM2 = opencv_core.Point(triangleMorphed[1].x().toInt(), triangle2[1].y().toInt())
+        val pointM3 = opencv_core.Point(triangleMorphed[2].x().toInt(), triangle2[2].y().toInt())
+        //circle(imgDst, pointM1, 10,Scalar(0.0, 0.0, 0.0, 255.0),-1,8,0)
+        //circle(imgDst, pointM2, 10,Scalar(0.0, 0.0, 0.0, 255.0),-1,8,0)
+        //circle(imgDst, pointM3, 10,Scalar(0.0, 0.0, 0.0, 255.0),-1,8,0)
+
+        //line(imgDst, point1, point2, Scalar(255.0,0.0,0.0,255.0), 10, 8, 0)
+        //line(imgDst, point2, point3, Scalar(255.0,0.0,0.0,255.0), 10, 8, 0)
+        //line(imgDst, point1, point3, Scalar(255.0,0.0,0.0,255.0), 10, 8, 0)
 
     }
+
+
     return myMatToBitmap(imgDst)
 }
